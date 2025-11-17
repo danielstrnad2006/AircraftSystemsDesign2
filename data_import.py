@@ -44,4 +44,3 @@ def extract_as_list(name):
         data_points.append(singular_point)
     return data_points
 
-print(extract_as_list("data/zero_aoa_use.txt"))
