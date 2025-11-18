@@ -4,7 +4,7 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # This code loads wing data exactly as it is described in the assignment appendix B
-footer_lines = 1042 #number of lines to disregard at the end of the file
+footer_lines = 1029 #number of lines to disregard at the end of the file
 span = 32.1632 #m
 
 
@@ -12,6 +12,7 @@ span = 32.1632 #m
 y_pos_lst = np.genfromtxt('data/MainWing_a=0.00_v=10.00ms.txt', skip_header=40, skip_footer=footer_lines, usecols=0).tolist()
 
 chord_lst = np.genfromtxt('data/MainWing_a=0.00_v=10.00ms.txt', skip_header=40, skip_footer=footer_lines, usecols=1).tolist()
+print(chord_lst)
 chord_intrpl =sp.interpolate.interp1d(y_pos_lst, chord_lst, kind='linear', fill_value="extrapolate")
 
 
@@ -72,10 +73,12 @@ class HalfWing:
         self.velocity = velocity
         self.aoa = aoa
         self.rho = rho
-        self.velocity = velocity
-        self.aoa = aoa
-        self.rho = rho
 
+        self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y)/self.get_Cl(y)
+        self.x_cp_distance = lambda y: self.x_cp_ratio(y)*self.chord(y)
+
+        self.x_centroid_distance = lambda y: 1 #meter
+                                        
         # create a callable that evaluates local lift (per unit span) at spanwise location y
         # interpolators must be called with y (they are callables)
         # get_Cl(y) already accounts for aoa via the stored gradient/intercept
@@ -86,11 +89,10 @@ class HalfWing:
         self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
         self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
 
+        self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
+        self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
+        self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
 
-        ax = np.linspace(0, self.b/2, 200)
-        Mz = [self.bendingMoment(y_pos) for y_pos in ax ]
-        plt.plot(ax, Mz)
-        plt.show()
 
     def _eval(self, intercept, grad, y, aoa=0.0):
         # aoa: same units used when computing gradients (here degrees)
@@ -108,6 +110,21 @@ class HalfWing:
 
     def get_Cm(self, y):
         return self._eval(self.Cm_0, self.Cm_grad, y, self.aoa)
+    
+    def get_plots(self):
+        ax = np.linspace(0, self.b/2, 200)
+        Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
+        Cm_plot = [self.Cm_0(y_pos) for y_pos in ax]
+        x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
+        x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in ax ]
+
+        #plt.plot(ax, x_cp_plot, label = "centre of pressure position [m] from LE")
+        plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
+        plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
+        plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
+        plt.legend()
+        plt.show()
 
 halfWing = HalfWing(params_intrpl)
 halfWing.set_conditions(velocity=150, aoa=8, rho=1.225)
+halfWing.get_plots()
