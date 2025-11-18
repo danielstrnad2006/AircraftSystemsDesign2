@@ -1,7 +1,9 @@
 import scipy as sp
 import numpy as np  
 from scipy import interpolate
+from scipy import signal 
 import matplotlib.pyplot as plt
+
 
 # This code loads wing data exactly as it is described in the assignment appendix B
 footer_lines = 1029 #number of lines to disregard at the end of the file
@@ -48,7 +50,7 @@ params_intrpl = [chord_intrpl, Ai_0_intrpl, Ai_grad_intrpl, Cl_0_intrpl, Cl_grad
 
 
 class HalfWing:
-    def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None):
+    def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1):
         # store interpolators (intercept and gradient) passed in params
         self.chord    = params[0]
         self.Ai_0     = params[1]; self.Ai_grad = params[2]
@@ -58,11 +60,21 @@ class HalfWing:
 
         self.S = 149.9 #m
         self.b = 32.1632 #m^2
-        self.velocity = v_ref
-        self.aoa = aoa_ref
-        self.rho = rho_ref
+        self.y_engine = 10 #m # to be determined
+        self.m_engine_and_nacelle = 3989.45376 #kg
+        self.velocity = v_ref #m s^-1
+        self.aoa = aoa_ref #deg
+        self.rho = rho_ref #kg m^-3
 
+        self.johannes_fuel_constant = 0.05  #fraction of fuel cross-sectional area over chord^2
         self.mass = 6215.1408 #kg
+        self.fuel_percentage = 100 #percent
+        self.kerosene_density = 800 #kg m^-3
+        self.g_loading = g_loading
+        self.g = 9.81 #kg m s^-2
+
+
+
         # Inertial forces:
         L = self.b / 2.0
         c_root = float(self.chord(0))
@@ -70,18 +82,11 @@ class HalfWing:
         # integral of chord(y)^2 over 0..L for a linear chord: I = L*(c_root^2 + c_root*c_tip + c_tip^2)/3
         self.massConsts = self.mass/2 / (L * (c_root**2 + c_root*c_tip + c_tip**2) / 3.0)
         self.wing_mu = lambda y: self.massConsts * (float(self.chord(y))**2)
-        print(2 * sp.integrate.quad(self.wing_mu, 0, L)[0])
+        self.fuel_volume_distribution = lambda y: self.chord(y)**2 * self.johannes_fuel_constant
+        self.fuel_mass_distribution = lambda y: self.fuel_volume_distribution(y)/self.kerosene_density if y<self.b*0.65  else 0.0
+        self.wing_mass_distribution = lambda y: self.fuel_mass_distribution(y)+self.wing_mu(y)
 
-
-        self.totalCl_0, _ = sp.integrate.quad(self.Cl_0, 0, self.b / 2)
-        self.totalCl_grad, _ = sp.integrate.quad(self.Cl_grad, 0, self.b / 2)
-
-
-    def set_conditions(self, velocity, aoa, rho):
-        self.velocity = velocity
-        self.aoa = aoa
-        self.rho = rho
-
+    def compute_internal_forces(self):
         self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y)/self.get_Cl(y)
         self.x_cp_distance = lambda y: self.x_cp_ratio(y)*self.chord(y)
 
@@ -90,16 +95,30 @@ class HalfWing:
         # create a callable that evaluates local lift (per unit span) at spanwise location y
         # interpolators must be called with y (they are callables)
         # get_Cl(y) already accounts for aoa via the stored gradient/intercept
-        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y)
-        # example: integrate to get total lift on the half wing
+        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y) #up positive lift
+        # quick check: integrate to get total lift on the half wing
         self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
-        self.ShearForce = lambda y: self.Lift(y)*y-self.total_lift_half
+        print("Total lift is: ",2*self.total_lift_half,"[N]")
+        cont_normal_force = lambda y: self.Lift(y) - self.g*self.g_loading*(self.wing_mass_distribution(y))
+
+        self.internal_shear = lambda y: sp.integrate.quad(cont_normal_force, self.b/2, y)[0] - (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0)
         self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
         self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
 
         self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
         self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
         self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
+
+
+
+
+
+    def set_conditions(self, velocity, aoa, rho):
+        self.velocity = velocity #m s^-1
+        self.aoa = aoa #deg
+        self.rho = rho #kg m^-3
+        self.compute_internal_forces()
+
 
 
     def _eval(self, intercept, grad, y, aoa=0.0):
@@ -119,22 +138,34 @@ class HalfWing:
     def get_Cm(self, y):
         return self._eval(self.Cm_0, self.Cm_grad, y, self.aoa)
     
-    def get_plots(self):
+    def get_coefficient_plots(self):
         ax = np.linspace(0, self.b/2, 200)
         Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
         Cm_plot = [self.Cm_0(y_pos) for y_pos in ax]
         x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
-        mu_plot = [self.wing_mu(y_pos) for y_pos in ax]
         x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in ax ]
 
         #plt.plot(ax, x_cp_plot, label = "centre of pressure position [m] from LE")
         plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
         plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
         plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
-        plt.plot(ax, mu_plot, label="variation of mass of dry wing per unit span")
         plt.legend()
         plt.show()
+    
+    def get_internal_shear_plot(self):
+        ax = np.linspace(0, self.b/2, 200)
+        Vz_plot = [self.internal_shear(y_pos) for y_pos in ax]
+        plt.plot(ax, Vz_plot, label = "internal shear distribution [N]")
+        plt.legend()
+        plt.show()    
+
+    def update_fuel(self, percentage):
+        self.fuel_volume_distribution = lambda y: self.chord(y)**2 * self.johannes_fuel_constant
+        self.fuel_mass_distribution = lambda y: (percentage/100)*self.fuel_volume_distribution(y)/self.kerosene_density if y<self.b*0.65  else 0.0
+
+
+        
 
 halfWing = HalfWing(params_intrpl)
 halfWing.set_conditions(velocity=150, aoa=8, rho=1.225)
-halfWing.get_plots()
+halfWing.get_internal_shear_plot()
