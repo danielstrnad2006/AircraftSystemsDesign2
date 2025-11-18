@@ -60,13 +60,13 @@ class HalfWing:
 
         self.S = 149.9 #m
         self.b = 32.1632 #m^2
-        self.y_engine = 10 #m # to be determined
+        self.y_engine = 6 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
         self.velocity = v_ref #m s^-1
         self.aoa = aoa_ref #deg
         self.rho = rho_ref #kg m^-3
 
-        self.johannes_fuel_constant = 0.05  #fraction of fuel cross-sectional area over chord^2
+        self.johannes_fuel_constant = 0.05884365  #fraction of fuel cross-sectional area over chord^2
         self.mass = 6215.1408 #kg
         self.fuel_percentage = 100 #percent
         self.kerosene_density = 800 #kg m^-3
@@ -82,8 +82,8 @@ class HalfWing:
         # integral of chord(y)^2 over 0..L for a linear chord: I = L*(c_root^2 + c_root*c_tip + c_tip^2)/3
         self.massConsts = self.mass/2 / (L * (c_root**2 + c_root*c_tip + c_tip**2) / 3.0)
         self.wing_mu = lambda y: self.massConsts * (float(self.chord(y))**2)
-        self.fuel_volume_distribution = lambda y: self.chord(y)**2 * self.johannes_fuel_constant
-        self.fuel_mass_distribution = lambda y: self.fuel_volume_distribution(y)/self.kerosene_density if y<self.b*0.65  else 0.0
+        self.fuel_volume_distribution = lambda y: ((self.chord(y)**2 * self.johannes_fuel_constant) if y<(self.b/2)*0.65  else 0.0)
+        self.fuel_mass_distribution = lambda y: self.fuel_volume_distribution(y)*self.kerosene_density
         self.wing_mass_distribution = lambda y: self.fuel_mass_distribution(y)+self.wing_mu(y)
 
     def compute_internal_forces(self):
@@ -101,13 +101,14 @@ class HalfWing:
         print("Total lift is: ",2*self.total_lift_half,"[N]")
         cont_normal_force = lambda y: self.Lift(y) - self.g*self.g_loading*(self.wing_mass_distribution(y))
 
-        self.internal_shear = lambda y: sp.integrate.quad(cont_normal_force, self.b/2, y)[0] - (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0)
-        self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
-        self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
+        reaction_shear = self.g*self.g_loading*self.m_engine_and_nacelle + sp.integrate.quad(cont_normal_force, 0, self.b/2)[0]
+        self.internal_shear = lambda y: sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
+        #self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
+        #self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
 
-        self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
-        self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
-        self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
+        #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
+        #self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
+        #self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
 
 
 
@@ -153,19 +154,25 @@ class HalfWing:
         plt.show()
     
     def get_internal_shear_plot(self):
-        ax = np.linspace(0, self.b/2, 200)
+        ax = np.linspace(0, self.b/2, 400)
+        dry_wing_plot = [self.g*self.g_loading*self.wing_mu(y_pos) for y_pos in ax]
+        fuel_plot = [self.g*self.g_loading*self.fuel_mass_distribution(y_pos) for y_pos in ax]
+        lift_plot = [self.Lift(y_pos) for y_pos in ax]
         Vz_plot = [self.internal_shear(y_pos) for y_pos in ax]
+        plt.plot(ax, dry_wing_plot, label = "wing structure weight distribution [N]")
+        plt.plot(ax, fuel_plot, label = "fuel weight distribution [N]")
+        plt.plot(ax, lift_plot, label = "Lift distribution [N]")
         plt.plot(ax, Vz_plot, label = "internal shear distribution [N]")
         plt.legend()
         plt.show()    
 
     def update_fuel(self, percentage):
-        self.fuel_volume_distribution = lambda y: self.chord(y)**2 * self.johannes_fuel_constant
-        self.fuel_mass_distribution = lambda y: (percentage/100)*self.fuel_volume_distribution(y)/self.kerosene_density if y<self.b*0.65  else 0.0
+        self.fuel_percentage = percentage
+        self.compute_internal_forces()
 
 
         
 
 halfWing = HalfWing(params_intrpl)
-halfWing.set_conditions(velocity=150, aoa=8, rho=1.225)
+halfWing.set_conditions(velocity=120, aoa=4, rho=1.225)
 halfWing.get_internal_shear_plot()
