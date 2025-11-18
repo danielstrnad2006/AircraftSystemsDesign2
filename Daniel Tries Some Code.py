@@ -62,8 +62,16 @@ class HalfWing:
         self.aoa = aoa_ref
         self.rho = rho_ref
 
-        # integrate using wrappers because interp1d may return numpy types
-        area_half, _ = sp.integrate.quad(self.chord, 0, self.b / 2)
+        self.mass = 6215.1408 #kg
+        # Inertial forces:
+        L = self.b / 2.0
+        c_root = float(self.chord(0))
+        c_tip = float(self.chord(L))
+        # integral of chord(y)^2 over 0..L for a linear chord: I = L*(c_root^2 + c_root*c_tip + c_tip^2)/3
+        self.massConsts = self.mass/2 / (L * (c_root**2 + c_root*c_tip + c_tip**2) / 3.0)
+        self.wing_mu = lambda y: self.massConsts * (float(self.chord(y))**2)
+        print(2 * sp.integrate.quad(self.wing_mu, 0, L)[0])
+
 
         self.totalCl_0, _ = sp.integrate.quad(self.Cl_0, 0, self.b / 2)
         self.totalCl_grad, _ = sp.integrate.quad(self.Cl_grad, 0, self.b / 2)
@@ -116,12 +124,14 @@ class HalfWing:
         Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
         Cm_plot = [self.Cm_0(y_pos) for y_pos in ax]
         x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
+        mu_plot = [self.wing_mu(y_pos) for y_pos in ax]
         x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in ax ]
 
         #plt.plot(ax, x_cp_plot, label = "centre of pressure position [m] from LE")
         plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
         plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
         plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
+        plt.plot(ax, mu_plot, label="variation of mass of dry wing per unit span")
         plt.legend()
         plt.show()
 
