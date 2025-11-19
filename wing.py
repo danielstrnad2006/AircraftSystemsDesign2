@@ -67,7 +67,7 @@ class WingSizing:
         plt.savefig('temp/planform.png', bbox_inches='tight')
 
 
-wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
-                 leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
-
-wing.plot(chord_position=0)
+# wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
+#                  leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
+#
+# wing.plot(chord_position=0)
