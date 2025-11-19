@@ -106,7 +106,7 @@ class HalfWing:
 
         reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
         self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
-        #self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
+        self.total_bendingMoment= lambda y: -sp.integrate.quad(self.internal_shear(y), y, self.b/2)[0]
         #self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
 
         #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
