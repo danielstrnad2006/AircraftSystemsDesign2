@@ -48,6 +48,7 @@ params_intrpl = [chord_intrpl, Ai_0_intrpl, Ai_grad_intrpl, Cl_0_intrpl, Cl_grad
 class HalfWing:
     def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1, fuel_percentage_ref=100):
         # store interpolators (intercept and gradient) passed in params
+        self.CL_des   = None
         self.chord    = params[0]
         self.Ai_0     = params[1]; self.Ai_grad = params[2]
         self.Cl_0     = params[3]; self.Cl_grad = params[4]
@@ -112,19 +113,6 @@ class HalfWing:
         #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
         #self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
         #self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
-
-
-
-
-
-    def set_conditions(self, velocity, CL_des, rho):
-        self.velocity = velocity #m s^-1
-
-        self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
-        print("target angle of attack is: ", self.aoa)
-        self.rho = rho #kg m^-3
-        self.compute_internal_forces()
-
 
 
 
@@ -194,11 +182,32 @@ class HalfWing:
 
     def update_g_loading(self, g_loading=1.0):
         self.g_loading = g_loading
-        self.compute_internal_forces()   
+        self.compute_internal_forces()
+
+
+    # def set_conditions(self, velocity, CL_des, rho):
+    #     self.velocity = velocity #m s^-1
+    #
+    #     self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
+    #     print("target angle of attack is: ", self.aoa)
+    #     self.rho = rho #kg m^-3
+    #     self.compute_internal_forces()
+
+
+    def set_conditions(self, load_factor, weight, velocity, rho):
+        self.velocity = velocity #m s^-1
+
+        self.CL_des = (weight * load_factor * 2) / (rho * velocity**2 * self.S)
+
+        self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
+        print("target angle of attack is: ", self.aoa)
+        self.rho = rho #kg m^-3
+        self.compute_internal_forces()
+
 
 
 halfWing = HalfWing(params_intrpl)
-halfWing.set_conditions(velocity=120, CL_des=0.54, rho=1.225)
+halfWing.set_conditions(load_factor=1, weight=6000, velocity=120, rho=1.225)
 halfWing.get_coefficient_plots()
 halfWing.get_internal_shear_plot()
 halfWing.update_fuel(percentage=10)
