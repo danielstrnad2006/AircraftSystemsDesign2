@@ -95,7 +95,16 @@ class HalfWing:
         self.wing_mu = lambda y: self.massConsts * (float(self.chord(y))**2)
         self.fuel_volume_distribution = lambda y: ((self.chord(y)**2 * self.johannes_fuel_constant) if y<(self.b/2)*0.65  else 0.0)
         
-        
+    def polar_moment_intertia(crosssection,y):
+        cs = crosssection.cross_section_at(y)     # get geometry at this span station
+        integral = (
+            cs.topspar_length    / cs.topspar_t +
+            cs.bottomspar_length / cs.bottomspar_t +
+            cs.left_wall_length  / cs.left_wall_t +
+            cs.right_wall_length / cs.right_wall_t
+        )
+        J = 4 * (cs.Area ** 2) / integral
+        return 10  #this still has to be changed so it outputs the correct polar moment of inertia at the correct position
 
     def compute_internal_forces(self):
         self.fuel_mass_distribution = lambda y:(self.fuel_percentage/100)*self.fuel_volume_distribution(y)*self.kerosene_density
@@ -121,40 +130,57 @@ class HalfWing:
         reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
         self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = sp.integrate.quad(lambda y: float(self.internal_shear(y)), 0, self.y_engine)[0] + sp.integrate.quad(lambda y: float(self.internal_shear(y)), self.y_engine, self.b/2)[0]
-        print(self.reaction_bending)
-        
+        #print(self.reaction_bending)
+
+        #this stopped working so I commented it out
+
+
+
         #self.internal_bending = lambda y: -sp.integrate.quad(self.internal_shear, y, self.b/2)[0] + self.reaction_bending
         #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
         #self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
         #self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
 
 
-    def torque_loading(self):
+    def torque_per_span(self,y):
         # different torques: torque due to lift, no torque due to wing weight, point torque due to engine thrust and weight, 
         #  # this is to be changed\
         #positive torque is pointed towards the negative y axis
 
-        torques=[]
-        position=[]
-        sum_torque=0
-        dy=0.01
-        for i in np.arange(0,self.b/2, dy): 
-            x_position, z_position=centroid_position(i) #this gives position from the leading edge, so +x is towards trailing edge, z is from the leading edge
-            engine_pos=np.array([self.engine_x_pos-x_position,0, self.engine_z_pos-z_position]) #this has to be relative to shear center, so axis system is 0,0,0 at shear center, x axis + towards trailing edge, don´t care about y position here to determine torque
-            engine_force=np.array([-self.engine_thrust, 0, self.m_engine_and_nacelle*self.g])
-            torque_lift= np.array([0,(self.x_cp_distance(i)-x_position)*self.Lift(i)*dy,0])
-            if self.y_engine==i:
-                engine_torque=np.cross(engine_pos, engine_force)
-                
-            else: engine_torque=np.array([0,0,0])
-            total_torque=engine_torque+torque_lift
-            sum_torque+= total_torque[1]
-            torques.append(sum_torque)
-            position.append(i)
-        plt.plot(position, torques-sum_torque)
-
-
-        
+        x_pos, z_pos = centroid_position(y)
+        return (self.x_cp_distance(y) - x_pos) * self.Lift(y)
+    def internal_torque(self, bound):
+        torque_lift, err = sp.integrate.quad(lambda y: self.torque_per_span(y), 0, bound)
+        if bound >= self.y_engine:
+            x_pos_e, z_pos_e = centroid_position(self.y_engine)
+            engine_pos = np.array([
+                self.engine_x_pos - x_pos_e,
+                0,
+                self.engine_z_pos - z_pos_e
+            ])
+            engine_force = np.array([
+                -self.engine_thrust,
+                0,
+                self.m_engine_and_nacelle * self.g
+            ])
+            engine_torque = np.cross(engine_pos, engine_force)[1]
+        else:
+            engine_torque = 0
+        return torque_lift + engine_torque
+    def torque_plot(self):
+        y_vals = np.linspace(0, self.b/2, 1000)
+        torques = []
+        sum=self.internal_torque(self.b/2)
+        for yi in y_vals:
+            cum_torque= self.internal_torque(yi)
+            torques.append(cum_torque)
+       
+        import matplotlib.pyplot as plt
+        plt.plot(y_vals, torques-sum)
+        plt.xlabel("Spanwise position y [m]")
+        plt.ylabel("Cumulative torque [Nm]")
+        plt.grid(True)
+        plt.show()   
         
 
 
@@ -264,7 +290,7 @@ halfWing = HalfWing(params_intrpl)
 
 halfWing.set_conditions(load_factor=1, weight=100000, velocity=120, rho=1.225)
 halfWing.get_coefficient_plots()
-halfWing.torque_loading()
+halfWing.torque_plot()
 halfWing.get_internal_shear_plot()
 halfWing.update_fuel(percentage=10)
 halfWing.get_internal_shear_plot()
