@@ -50,7 +50,7 @@ params_intrpl = [chord_intrpl, Ai_0_intrpl, Ai_grad_intrpl, Cl_0_intrpl, Cl_grad
 
 
 class HalfWing:
-    def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1):
+    def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1, fuel_percentage_ref=100):
         # store interpolators (intercept and gradient) passed in params
         self.chord    = params[0]
         self.Ai_0     = params[1]; self.Ai_grad = params[2]
@@ -68,12 +68,13 @@ class HalfWing:
 
         self.johannes_fuel_constant = 0.05884365  #fraction of fuel cross-sectional area over chord^2
         self.mass = 6215.1408 #kg
-        self.fuel_percentage = 100 #percent
+        self.fuel_percentage = fuel_percentage_ref #percent
         self.kerosene_density = 800 #kg m^-3
         self.g_loading = g_loading
-        self.g = 9.81 #kg m s^-2
+        self.g = -9.80665 #kg m s^-2
 
-
+        self.Cl_0_total = float(0.192557) # to be continued, read from the xflr results directly
+        self.CL_grad_total= float((0.962596-0.192557)/10)
 
         # Inertial forces:
         L = self.b / 2.0
@@ -83,26 +84,30 @@ class HalfWing:
         self.massConsts = self.mass/2 / (L * (c_root**2 + c_root*c_tip + c_tip**2) / 3.0)
         self.wing_mu = lambda y: self.massConsts * (float(self.chord(y))**2)
         self.fuel_volume_distribution = lambda y: ((self.chord(y)**2 * self.johannes_fuel_constant) if y<(self.b/2)*0.65  else 0.0)
-        self.fuel_mass_distribution = lambda y: self.fuel_volume_distribution(y)*self.kerosene_density
-        self.wing_mass_distribution = lambda y: self.fuel_mass_distribution(y)+self.wing_mu(y)
+        
+        
 
     def compute_internal_forces(self):
+        self.fuel_mass_distribution = lambda y:(self.fuel_percentage/100)*self.fuel_volume_distribution(y)*self.kerosene_density
+        self.wing_mass_distribution = lambda y: self.fuel_mass_distribution(y)+self.wing_mu(y)
+
+
         self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y)/self.get_Cl(y)
         self.x_cp_distance = lambda y: self.x_cp_ratio(y)*self.chord(y)
 
         self.x_centroid_distance = lambda y: 1 #meter
                                         
-        # create a callable that evaluates local lift (per unit span) at spanwise location y
-        # interpolators must be called with y (they are callables)
-        # get_Cl(y) already accounts for aoa via the stored gradient/intercept
+
         self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y) #up positive lift
         # quick check: integrate to get total lift on the half wing
         self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
         print("Total lift is: ",2*self.total_lift_half,"[N]")
-        cont_normal_force = lambda y: self.Lift(y) - self.g*self.g_loading*(self.wing_mass_distribution(y))
 
-        reaction_shear = self.g*self.g_loading*self.m_engine_and_nacelle + sp.integrate.quad(cont_normal_force, 0, self.b/2)[0]
-        self.internal_shear = lambda y: sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
+
+        cont_normal_force = lambda y: self.Lift(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
+
+        reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
+        self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         #self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
         #self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
 
@@ -114,11 +119,14 @@ class HalfWing:
 
 
 
-    def set_conditions(self, velocity, aoa, rho):
+    def set_conditions(self, velocity, CL_des, rho):
         self.velocity = velocity #m s^-1
-        self.aoa = aoa #deg
+
+        self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
+        print("target angle of attack is: ", self.aoa)
         self.rho = rho #kg m^-3
         self.compute_internal_forces()
+
 
 
 
@@ -139,6 +147,8 @@ class HalfWing:
     def get_Cm(self, y):
         return self._eval(self.Cm_0, self.Cm_grad, y, self.aoa)
     
+
+
     def get_coefficient_plots(self):
         ax = np.linspace(0, self.b/2, 200)
         Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
@@ -153,26 +163,46 @@ class HalfWing:
         plt.legend()
         plt.show()
     
+
+
     def get_internal_shear_plot(self):
-        ax = np.linspace(0, self.b/2, 400)
-        dry_wing_plot = [self.g*self.g_loading*self.wing_mu(y_pos) for y_pos in ax]
-        fuel_plot = [self.g*self.g_loading*self.fuel_mass_distribution(y_pos) for y_pos in ax]
-        lift_plot = [self.Lift(y_pos) for y_pos in ax]
-        Vz_plot = [self.internal_shear(y_pos) for y_pos in ax]
-        plt.plot(ax, dry_wing_plot, label = "wing structure weight distribution [N]")
-        plt.plot(ax, fuel_plot, label = "fuel weight distribution [N]")
-        plt.plot(ax, lift_plot, label = "Lift distribution [N]")
-        plt.plot(ax, Vz_plot, label = "internal shear distribution [N]")
-        plt.legend()
-        plt.show()    
+        y = np.linspace(0, self.b/2, 400)
+        dry_wing_plot = [self.g*self.g_loading*self.wing_mu(y_pos) for y_pos in y]
+        fuel_plot = [self.g*self.g_loading*self.fuel_mass_distribution(y_pos) for y_pos in y]
+        lift_plot = [self.Lift(y_pos) for y_pos in y]
+        Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
+
+        fig, ax1 = plt.subplots()
+        l1, = ax1.plot(y, dry_wing_plot, label="wing structure weight distribution [N]")
+        l2, = ax1.plot(y, fuel_plot, label="fuel weight distribution [N]")
+        l3, = ax1.plot(y, lift_plot, label="Lift distribution [N]")
+        ax1.set_xlabel("y [m]")
+        ax1.set_ylabel("force per unit span [N]")
+
+        ax2 = ax1.twinx()
+        l4, = ax2.plot(y, Vz_plot, color='k', label="internal shear distribution [N]")
+        ax2.set_ylabel("internal shear [N]")
+        handles = [l1, l2, l3, l4]
+        labels = [h.get_label() for h in handles]
+        ax1.legend(handles, labels, loc='lower right')
+
+        plt.show()
 
     def update_fuel(self, percentage):
         self.fuel_percentage = percentage
         self.compute_internal_forces()
 
+    def update_g_loading(self, g_loading=1.0):
+        self.g_loading = g_loading
+        self.compute_internal_forces()   
 
-        
 
 halfWing = HalfWing(params_intrpl)
-halfWing.set_conditions(velocity=120, aoa=4, rho=1.225)
+halfWing.set_conditions(velocity=120, CL_des=0.54, rho=1.225)
 halfWing.get_internal_shear_plot()
+halfWing.update_fuel(percentage=10)
+halfWing.get_internal_shear_plot()
+halfWing.update_fuel(percentage=100)
+halfWing.update_g_loading(g_loading=-1.5)
+halfWing.get_internal_shear_plot()
+
