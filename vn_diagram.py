@@ -20,7 +20,7 @@ class VnDiagram:
     def calculate_speeds_and_limits(self):
         # Stall speed
         self.V_s = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max * self.S * self.rho))
-        self.n_max = max(2.1 + 24000/(self.W + 10000), 2.5)
+        self.n_max = max(2.1 + 24000/(self.W + 10000),2.5)
         self.n_min = -1
         self.V_A = self.V_s * math.sqrt(self.n_max)
         self.V_F = 1.6 * self.V_s  # flap speed for MTOW
@@ -60,6 +60,7 @@ class VnDiagram:
         n_neg_lim = [self.n_min, self.n_min]
 
         # Plot curves
+
         ax.plot(V_up, n_up, color=self.color)
         ax.plot(V_pos, n_pos, color=self.color)
         ax.plot(V_drop, n_drop, color=self.color)
@@ -69,13 +70,14 @@ class VnDiagram:
 
         # Only plot flap curve for MTOW
         if self.W == 228275.445:
-            ax.plot(V_flap, n_flap, color=self.color)
-            ax.plot(V_extended, n_extended, color=self.color)
-            print(f"V_F={self.V_F:.2f}, V_s0={self.V_s0:.2f}, V_s={self.V_s:.2f}")
+            ax.plot(V_flap, n_flap, color=purple, label="Flaps Extended Configuration")
+            ax.plot(V_extended, n_extended, color=purple)
 
         ax.set_title(self.label)
         ax.set_xlabel("V_EAS (m/s)")
-        ax.set_ylabel("n")
+        ax.set_ylabel("Load Factor n")
         ax.grid(True)
+        ax.set_ylim(-1.2, 3)
+        ax.legend()
 
 
