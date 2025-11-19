@@ -56,7 +56,7 @@ class HalfWing:
 
         self.S = 149.9 #m
         self.b = 32.1632 #m^2
-        self.y_engine = 6 #m # to be determined
+        self.y_engine = 7.03893 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
         self.velocity = v_ref #m s^-1
         self.aoa = aoa_ref #deg
@@ -94,7 +94,9 @@ class HalfWing:
         self.x_centroid_distance = lambda y: 1 #meter
                                         
         Ai_case = lambda y: self.get_Ai(y)
-        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y, Ai=self.get_Ai(y))   #up positive lift
+        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y, Ai=Ai_case(y))   #up positive lift
+        self.Drag = lambda y: self.Lift(y)*np.sin(np.deg2rad(Ai_case(y)))
+        self.aerodynamic_normal= lambda y: np.cos(np.rad2deg(self.aoa))*self.Lift(y) + np.sin(np.rad2deg(self.aoa))*self.Drag(y)
         # quick check: integrate to get total lift on the half wing
         self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
         print("Total lift is: ",2*self.total_lift_half,"[N]")
@@ -131,17 +133,17 @@ class HalfWing:
         return float(intercept(y)) + aoa_eff * float(grad(y))
 
     # convenience getters
-    def get_Ai(self, y, Ai=0):
-        return self._eval(self.Ai_0, self.Ai_grad, y, aoa_eff=self.aoa-Ai)
+    def get_Ai(self, y):
+        return self._eval(self.Ai_0, self.Ai_grad, y, aoa_eff=self.aoa)
 
     def get_Cl(self, y, Ai=0):
-        return self._eval(self.Cl_0, self.Cl_grad, y, aoa_eff=self.aoa-Ai)
+        return self._eval(self.Cl_0, self.Cl_grad, y, aoa_eff=self.aoa+Ai)
 
     def get_lCd(self, y, Ai=0):
-        return self._eval(self.lCd_0, self.lCd_grad, y, aoa_eff=self.aoa-Ai)
+        return self._eval(self.lCd_0, self.lCd_grad, y, aoa_eff=self.aoa+Ai)
 
     def get_Cm(self, y, Ai=0):
-        return self._eval(self.Cm_0, self.Cm_grad, y, aoa_eff=self.aoa-Ai)
+        return self._eval(self.Cm_0, self.Cm_grad, y, aoa_eff=self.aoa+Ai)
     
 
 
