@@ -107,9 +107,10 @@ class HalfWing:
 
         reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
         self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
-        self.total_bendingMoment= lambda y: -sp.integrate.quad(self.internal_shear(y), y, self.b/2)[0]
-        #self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
-
+        self.reaction_bending = sp.integrate.quad(lambda y: float(self.internal_shear(y)), 0, self.y_engine)[0] + sp.integrate.quad(lambda y: float(self.internal_shear(y)), self.y_engine, self.b/2)[0]
+        print(self.reaction_bending)
+        
+        #self.internal_bending = lambda y: -sp.integrate.quad(self.internal_shear, y, self.b/2)[0] + self.reaction_bending
         #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
         #self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
         #self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
@@ -159,6 +160,7 @@ class HalfWing:
         fuel_plot = [self.g*self.g_loading*self.fuel_mass_distribution(y_pos) for y_pos in y]
         lift_plot = [self.Lift(y_pos) for y_pos in y]
         Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
+        #Mx_plot = [self.internal_bending(y_pos) for y_pos in y]
 
         fig, ax1 = plt.subplots()
         l1, = ax1.plot(y, dry_wing_plot, label="wing structure weight distribution [N]")
@@ -197,7 +199,7 @@ class HalfWing:
     def set_conditions(self, load_factor, weight, velocity, rho):
         self.velocity = velocity #m s^-1
 
-        self.CL_des = (weight * load_factor * 2) / (rho * velocity**2 * self.S)
+        self.CL_des = (-weight * self.g* load_factor * 2) / (rho * velocity**2 * self.S)
 
         self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
         print("target angle of attack is: ", self.aoa)
@@ -207,7 +209,7 @@ class HalfWing:
 
 
 halfWing = HalfWing(params_intrpl)
-halfWing.set_conditions(load_factor=1, weight=6000, velocity=120, rho=1.225)
+halfWing.set_conditions(load_factor=1, weight=100000, velocity=120, rho=1.225)
 halfWing.get_coefficient_plots()
 halfWing.get_internal_shear_plot()
 halfWing.update_fuel(percentage=10)
