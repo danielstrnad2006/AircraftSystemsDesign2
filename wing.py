@@ -5,7 +5,6 @@ from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 
 
-
 # ---------------------------
 # Wing Sizing Class
 # ---------------------------

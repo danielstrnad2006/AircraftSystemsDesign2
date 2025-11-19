@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
-from wewillfindaname import * 
+from cross_section import * 
 from wing import *
 
 
