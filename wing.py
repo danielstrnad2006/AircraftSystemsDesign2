@@ -46,6 +46,10 @@ class WingSizing:
         LE = np.array([self.leading_edge(yi) for yi in y])
         TE = np.array([self.trailing_edge(yi) for yi in y])
 
+        print(LE, TE, y)
+
+
+
         # Fill area first
         plt.fill_between(y, -LE, -TE, color='gray', alpha=0.3)
 
@@ -57,13 +61,13 @@ class WingSizing:
         plt.xlim(0, max(y)*1.1)
         plt.ylim(-max(TE)*1.1,0)
 
+        # Generate vertical line
+        plt.plot([chord_position]*2, [-self.leading_edge(chord_position), -self.trailing_edge(chord_position)], linewidth=3, color='red')
         plt.axis('off')
-
-        plt.show()
-        # plt.savefig('planform.png')
+        plt.savefig('temp/planform.png', bbox_inches='tight')
 
 
-wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
-                 leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
-
-wing.plot()
+# wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
+#                  leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
+#
+# wing.plot(chord_position=0)
