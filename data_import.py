@@ -36,12 +36,13 @@ def extract_as_list(name):
     useful_data=data[['y-span','Chord','Ai','Cl','ICd','CmGeom']]
     num_rows = len(useful_data)
     col_count=useful_data.shape[1]
-    data_points=[]
+    data_points=[] 
     for j in range(col_count):
         singular_point=[]
         for i in range(num_rows):
             singular_point.append(float(useful_data.iloc[i, j]))
         data_points.append(singular_point)
     return data_points
+
 
 print(extract_as_list("data/zero_aoa_use.txt"))
