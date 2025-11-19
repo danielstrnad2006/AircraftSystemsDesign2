@@ -1,6 +1,6 @@
 import math
 import numpy as np
-
+from pygments.styles.dracula import purple
 
 class VnDiagram:
     def __init__(self, weight, label, color, g=9.81, rho=1.225, S=149.9,
