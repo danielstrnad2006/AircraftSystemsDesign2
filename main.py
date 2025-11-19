@@ -4,4 +4,3 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-global panel_size = 0.8994

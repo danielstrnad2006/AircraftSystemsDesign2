@@ -18,6 +18,6 @@ def span_to_mass(span_location):
     inertial=const*c
     return inertial
 sum=0
-for i in np.arange(0,span/2,0.01):
-    sum+=span_to_mass(i)*0.01
+for i in np.arange(0,span/2,0.0001):
+    sum+=span_to_mass(i)*0.0001
 print(sum)
