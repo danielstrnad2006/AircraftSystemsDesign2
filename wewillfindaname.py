@@ -171,22 +171,31 @@ class CrossSection:
         plt.show()
         return 
     
+    #Function to find I_xx and I_yy values for the whole assembly (cross section)
     def find_AMOI(self, components):
+
+        #Assing value to variables so that they are defined
         I_xx_sum = 0.0
         I_yy_sum = 0.0
         
-        for comp in components:
+        #Go through the list of component including the spars, skins, and stiffeners
+        for comp in components:            
             A = comp.area
         
             I_xx = 0
             I_yy = 0
+            
+            #No need to compute I_xx, I_yy of stiffeners around their own centoridal axis (Assumed as 0)
+            #If the component is not a stiffener, compute the I_xx, I_yy of it around its own centrodial axis
             if not isinstance(comp, Stiffener):
                 I_xx = (comp.t * comp.L**3 * (np.sin(comp.angle + np.pi/2)**2)) / 12
                 I_yy = (comp.t * comp.L**3 * (np.cos(comp.angle + np.pi/2)**2)) / 12
 
+            #Find the parallel axis term of the component
             I_xx_parallel_axis = A * (comp.y_pos - self.assembly_centroid_y)**2
             I_yy_parallel_axis = A * (comp.x_pos - self.assembly_centroid_x)**2   
 
+            #Add the I_xx, I_yy about own centroidal axis of the component with the parallel axis term
             I_xx_sum = I_xx_sum + I_xx + I_xx_parallel_axis
             I_yy_sum = I_yy_sum + I_yy + I_yy_parallel_axis
          
