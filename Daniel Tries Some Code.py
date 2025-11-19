@@ -1,7 +1,5 @@
 import scipy as sp
 import numpy as np  
-from scipy import interpolate
-from scipy import signal 
 import matplotlib.pyplot as plt
 
 
@@ -56,6 +54,7 @@ def centroid_position(y):
 class HalfWing:
     def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1, fuel_percentage_ref=100):
         # store interpolators (intercept and gradient) passed in params
+        self.CL_des   = None
         self.chord    = params[0]
         self.Ai_0     = params[1]; self.Ai_grad = params[2]
         self.Cl_0     = params[3]; self.Cl_grad = params[4]
@@ -66,6 +65,7 @@ class HalfWing:
         self.b = 32.1632 #m^2
 
         
+        self.y_engine = 7.03893 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
         self.engine_thrust=363800/2 #N check this value
         self.y_engine = 7.04 #m # to be determined
@@ -107,8 +107,10 @@ class HalfWing:
 
         self.x_centroid_distance = lambda y: 1 #meter
                                         
-
-        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y) #up positive lift
+        Ai_case = lambda y: self.get_Ai(y)
+        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y, Ai=Ai_case(y))   #up positive lift
+        self.Drag = lambda y: self.Lift(y)*np.sin(np.deg2rad(Ai_case(y)))
+        self.aerodynamic_normal= lambda y: np.cos(np.rad2deg(self.aoa))*self.Lift(y) + np.sin(np.rad2deg(self.aoa))*self.Drag(y)
         # quick check: integrate to get total lift on the half wing
         self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
         print("Total lift is: ",2*self.total_lift_half,"[N]")
@@ -118,7 +120,7 @@ class HalfWing:
 
         reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
         self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
-        #self.total_bendingMoment, _ = sp.integrate.quad(lambda y: self.Lift(y)*y, 0, self.b/2)
+        self.total_bendingMoment= lambda y: -sp.integrate.quad(self.internal_shear(y), y, self.b/2)[0]
         #self.bendingMoment = lambda y: y*self.ShearForce(y)-self.total_bendingMoment
 
         #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
@@ -165,36 +167,38 @@ class HalfWing:
 
 
 
-    def _eval(self, intercept, grad, y, aoa=0.0):
+    def _eval(self, intercept, grad, y, aoa_eff=0.0):
         # aoa: same units used when computing gradients (here degrees)
-        return float(intercept(y)) + aoa * float(grad(y))
+        return float(intercept(y)) + aoa_eff * float(grad(y))
 
     # convenience getters
     def get_Ai(self, y):
-        return self._eval(self.Ai_0, self.Ai_grad, y, self.aoa)
+        return self._eval(self.Ai_0, self.Ai_grad, y, aoa_eff=self.aoa)
 
-    def get_Cl(self, y):
-        return self._eval(self.Cl_0, self.Cl_grad, y, self.aoa)
+    def get_Cl(self, y, Ai=0):
+        return self._eval(self.Cl_0, self.Cl_grad, y, aoa_eff=self.aoa+Ai)
 
-    def get_lCd(self, y):
-        return self._eval(self.lCd_0, self.lCd_grad, y, self.aoa)
+    def get_lCd(self, y, Ai=0):
+        return self._eval(self.lCd_0, self.lCd_grad, y, aoa_eff=self.aoa+Ai)
 
-    def get_Cm(self, y):
-        return self._eval(self.Cm_0, self.Cm_grad, y, self.aoa)
+    def get_Cm(self, y, Ai=0):
+        return self._eval(self.Cm_0, self.Cm_grad, y, aoa_eff=self.aoa+Ai)
     
 
 
     def get_coefficient_plots(self):
         ax = np.linspace(0, self.b/2, 200)
-        Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
-        Cm_plot = [self.Cm_0(y_pos) for y_pos in ax]
-        x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
+        Ai_plot = [self.Ai_0(y_pos) for y_pos in ax]
+        #Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
+        #Cm_plot = [self.Cm_0(y_pos) for y_pos in ax]
+        #x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
         x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in ax ]
 
         #plt.plot(ax, x_cp_plot, label = "centre of pressure position [m] from LE")
-        plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
-        plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
-        plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
+        plt.plot(ax, Ai_plot, label = "induced angle of attack at zero aoa")
+        #plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
+        #plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
+        #plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
         plt.legend()
         plt.show()
     
@@ -229,7 +233,28 @@ class HalfWing:
 
     def update_g_loading(self, g_loading=1.0):
         self.g_loading = g_loading
-        self.compute_internal_forces()   
+        self.compute_internal_forces()
+
+
+    # def set_conditions(self, velocity, CL_des, rho):
+    #     self.velocity = velocity #m s^-1
+    #
+    #     self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
+    #     print("target angle of attack is: ", self.aoa)
+    #     self.rho = rho #kg m^-3
+    #     self.compute_internal_forces()
+
+
+    def set_conditions(self, load_factor, weight, velocity, rho):
+        self.velocity = velocity #m s^-1
+
+        self.CL_des = (weight * load_factor * 2) / (rho * velocity**2 * self.S)
+
+        self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
+        print("target angle of attack is: ", self.aoa)
+        self.rho = rho #kg m^-3
+        self.compute_internal_forces()
+
 
 
 halfWing = HalfWing(params_intrpl)
