@@ -9,16 +9,31 @@ import matplotlib.patches as patches
 # Airfoil Class
 # ---------------------------
 class Component:
-    def __init__(self, t, L, x_pos, y_pos):
+    def __init__(self, t, L, x_pos, y_pos, angle=0):
         self.t = t
         self.L = L
         self.x_pos = x_pos
         self.y_pos = y_pos
+        self.angle = angle
 
     @property
     def area(self):
         return self.t * self.L
+    
+    @property
+    def lower_left_corner(self):
+        w = self.t
+        h = self.L
+        cx = self.x_pos
+        cy = self.y_pos
+        theta = self.angle
 
+        # Convert centroid to lower-left corner
+        x0 = cx - (w/2)*np.cos(theta) + (h/2)*np.sin(theta)
+        y0 = cy - (w/2)*np.sin(theta) - (h/2)*np.cos(theta)
+
+        return x0, y0
+    
 class Spar(Component): 
     def __init__(self, t, h, x_pos, y_pos):
         super().__init__(t, h, x_pos, y_pos)
@@ -29,19 +44,47 @@ class Skin(Component):
         super().__init__(t, l, x_pos, y_pos)
         self.angle =angle
 
+class Stiffener:
+    def __init__(self, area, x_pos, y_pos):
+        self._area = area
+        self.x_pos = x_pos
+        self.y_pos = y_pos
 
+    @property
+    def area(self):
+        return self._area
+
+
+
+    
 class CrossSection:
-    def __init__(self, xc_spar1, xc_spar2, chord, t_spar1, t_spar2, t_skin_up, t_skin_down, filepath):
+    def __init__(self, xc_spar1, xc_spar2, chord, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath):
         self.filepath = filepath
         self.xc_spar1 = xc_spar1
         self.xc_spar2 = xc_spar2
         self.chord = chord
+        self.x_spar1 = xc_spar1*chord
+        self.x_spar2 = xc_spar2*chord
+        self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
+        
+        self.assembly_centroid_x = 0
+        self.assembly_centroid_y = 0
         self.t_spar1 = t_spar1
         self.t_spar2 = t_spar2
+        self.stiffener = stiffeners
+
+        # upper and lower y coordinates of the spars
+        self.y_spar1_up = self.get_coordinate_at(self.x_spar1, True)
+        self.y_spar1_down = self.get_coordinate_at(self.x_spar1, False)
+        self.y_spar2_up = self.get_coordinate_at(self.x_spar2, True)
+        self.y_spar2_down = self.get_coordinate_at(self.x_spar2, False)
+
+        # Height of the spars
+        self.h_spar1 = self.y_spar1_up - self.y_spar1_down
+        self.h_spar2 = self.y_spar2_up - self.y_spar2_down
+
         self.t_skin_up = t_skin_up
         self.t_skin_down = t_skin_down
-        self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
-
 
     def _import_airfoil(self, filepath):
         x, y = [], []
@@ -77,7 +120,7 @@ class CrossSection:
         if x_lower[0] > x_lower[-1]:
             x_lower = np.flip(x_lower)
             y_lower = np.flip(y_lower)
-
+        
         return x, y, x_upper, y_upper, x_lower, y_lower
     
     def get_thickness_at(self, x_c):
@@ -97,73 +140,116 @@ class CrossSection:
         x_sum = 0.0
         y_sum = 0.0
 
+        plt.xlabel("x []")
+        plt.ylabel("y []")
+        plt.title("Airfoil cross section []")
+        plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
+
         for comp in components:
             A = comp.area
             total_area += A
-            x_sum += A * comp.x_pos
-            y_sum += A * comp.y_pos
-            
+
+            x_indv = A * comp.x_pos
+            y_indv = A * comp.y_pos
+            x_sum += x_indv 
+            y_sum += y_indv 
+
+            if isinstance(comp, Stiffener):
+                plt.plot(comp.x_pos, comp.y_pos, 'ro', markersize=6)  # stiffener as dot
+            else: 
+                rectangle = patches.Rectangle(comp.lower_left_corner, comp.t, comp.L, linewidth=0, edgecolor='gray', facecolor='gray', angle=np.rad2deg(comp.angle))
+                # draw centroid as a dot
+                plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)   # black dot ("k"), size 4
+                plt.gca().add_patch(rectangle)  # <- adds to current plot
+                plt.axis("equal")
+
             print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_sum:0.2f} \tA*y: {y_sum:0.2f}\t A: {A:0.2f}")
 
-        x_centroid = x_sum / total_area
-        y_centroid = y_sum / total_area
-
-        return x_centroid, y_centroid
-
-    def assembly_centroid_finder(self):
-
-        # upper and lower y coordinates of the spars
-        y_spar1_up = self.get_coordinate_at(self.xc_spar1, True)
-        y_spar1_down = self.get_coordinate_at(self.xc_spar1, False)
-        y_spar2_up = self.get_coordinate_at(self.xc_spar2, True)
-        y_spar2_down = self.get_coordinate_at(self.xc_spar2, False)
-
-        # Height of the spars
-        h_spar1 = y_spar1_up - y_spar1_down
-        h_spar2 = y_spar2_up - y_spar2_down
-
-        # Length and angle of the upper skin
-        l_skin_up = math.sqrt((self.xc_spar1 - self.xc_spar2)**2 + (y_spar1_up - y_spar2_up)**2)
-        theta_skin_up = np.atan((y_spar2_up - y_spar1_up)/(self.xc_spar2 - self.xc_spar1))
+        self.assembly_centroid_x = x_sum / total_area
+        self.assembly_centroid_y = y_sum / total_area
+        plt.plot(self.assembly_centroid_x, self.assembly_centroid_y, 'o', markersize=10) 
+        plt.show()
+        return 
+    
+    def find_AMOI(self, components):
+        I_xx_sum = 0.0
+        I_yy_sum = 0.0
         
+        for comp in components:
+            A = comp.area
+        
+            I_xx = 0
+            I_yy = 0
+            if not isinstance(comp, Stiffener):
+                I_xx = (comp.t * comp.L**3 * (np.sin(comp.angle + np.pi/2)**2)) / 12
+                I_yy = (comp.t * comp.L**3 * (np.cos(comp.angle + np.pi/2)**2)) / 12
+
+            I_xx_parallel_axis = A * (comp.y_pos - self.assembly_centroid_y)**2
+            I_yy_parallel_axis = A * (comp.x_pos - self.assembly_centroid_x)**2   
+
+            I_xx_sum = I_xx_sum + I_xx + I_xx_parallel_axis
+            I_yy_sum = I_yy_sum + I_yy + I_yy_parallel_axis
+         
+            
+            print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t Ixx: {I_xx:0.2f} \tIyy: {I_yy:0.2f}\t A*y^2: {I_xx_parallel_axis:0.2f}\t A*x^2: {I_yy_parallel_axis:0.2f}")
+
+        return  
+    
+    
+    def assembly_centroid_finder(self):
+        # Length and angle of the upper skin
+        l_skin_up = math.sqrt((self.x_spar1 - self.x_spar2)**2 + (self.y_spar1_up - self.y_spar2_up)**2)
+        theta_skin_up = np.atan((self.y_spar2_up - self.y_spar1_up)/(self.x_spar2 - self.x_spar1))
+        
+
         # Length and angle of the lower skin
-        l_skin_down = math.sqrt((self.xc_spar1 - self.xc_spar2)**2 + (y_spar1_down - y_spar2_down)**2)
-        theta_skin_down = np.atan((y_spar2_down - y_spar1_down)/(self.xc_spar2 - self.xc_spar1))
+        l_skin_down = math.sqrt((self.x_spar1 - self.x_spar2)**2 + (self.y_spar1_down - self.y_spar2_down)**2)
+        theta_skin_down = np.atan((self.y_spar2_down - self.y_spar1_down)/(self.x_spar2 - self.x_spar1))
 
         # Centroid of the first spar
-        y_bar_spar1 = h_spar1/2
-        x_bar_spar1 = self.xc_spar1
+        y_bar_spar1 = self.y_spar1_down + self.h_spar1/2
 
         # Centroid of the second spar
-        y_bar_spar2 = h_spar2/2
-        x_bar_spar2 = self.xc_spar2
+        y_bar_spar2 = self.y_spar2_down + self.h_spar2/2
 
         # Centroid of the upper skin
-        y_bar_skin_up = l_skin_up * np.sin(theta_skin_up)
-        x_bar_skin_up = l_skin_up * np.cos(theta_skin_up)
+        y_bar_skin_up = l_skin_up/2 * np.sin(theta_skin_up) + self.y_spar1_up
+        x_bar_skin_up = l_skin_up/2 * np.cos(theta_skin_up) + self.x_spar1 
         
         # Centroid of the lower skin
-        y_bar_skin_down = l_skin_down * np.sin(theta_skin_down)
-        x_bar_skin_down = l_skin_down * np.cos(theta_skin_down)
+        y_bar_skin_down = l_skin_down/2 * np.sin(theta_skin_down) + self.y_spar1_down
+        x_bar_skin_down = l_skin_down/2 * np.cos(theta_skin_down) + self.x_spar1
 
 
-        spar1 = Spar(self.t_spar1, h_spar1, x_bar_spar1, y_bar_spar1)
-        spar2 = Spar(self.t_spar2, h_spar2, x_bar_spar2, y_bar_spar2 )
+        spar1 = Spar(self.t_spar1, self.h_spar1, self.x_spar1, y_bar_spar1)
+        spar2 = Spar(self.t_spar2, self.h_spar2, self.x_spar2, y_bar_spar2)
 
-        skin_up = Skin(self.t_skin_up, l_skin_up, theta_skin_up ,x_bar_skin_up, y_bar_skin_up)
-        skin_down = Skin(self.t_skin_down, l_skin_down, theta_skin_down, x_bar_skin_down, y_bar_skin_down)
-
-        components = spar1, spar2, skin_up, skin_down
-        print(self.find_centroid(components))
+        skin_up = Skin(self.t_skin_up, l_skin_up, theta_skin_up + np.pi/2, x_bar_skin_up, y_bar_skin_up)
+        skin_down = Skin(self.t_skin_down, l_skin_down, theta_skin_down + np.pi/2, x_bar_skin_down, y_bar_skin_down)
 
 
-        print(y_spar1_up)
-        print(y_spar1_down)
-        print(y_spar2_up)
-        print(y_spar2_down)
-        
-        print(h_spar1)
-        print(h_spar2)
+        components = [spar1, spar2, skin_up, skin_down]
+
+        # now create Stiffener objects from your list of tuples
+        stiffener_objects = []
+        for xc_rel, side, area in self.stiffener:  # self.stiffener is list of (xc, 'up/down', area)
+            x_stiffener = xc_rel * self.chord  # convert relative chord to absolute x
+
+            # get y position on the airfoil
+            if side == 'up':
+                y_stiffener = l_skin_up*(x_stiffener/(self.x_spar2-self.x_spar1))*np.sin(theta_skin_up) + self.y_spar1_up - self.t_skin_up/2
+            else:
+                y_stiffener = l_skin_down*(x_stiffener/(self.x_spar2-self.x_spar1))*np.sin(theta_skin_down) + self.y_spar1_down + self.t_skin_down/2
+
+            # create Stiffener object
+            stiff = Stiffener(area=area, x_pos=x_stiffener, y_pos=y_stiffener)
+            stiffener_objects.append(stiff)
+
+        # add stiffeners to components
+        components.extend(stiffener_objects)
+
+        self.find_centroid(components)
+        self.find_AMOI(components)
 
         print(l_skin_up)
         print(np.rad2deg(theta_skin_up))
@@ -171,15 +257,3 @@ class CrossSection:
         print(np.rad2deg(theta_skin_down))
         return 
 
-    def plot(self):
-        plt.xlabel("x/c []")
-        plt.ylabel("y/c []")
-        plt.title("Airfoil cross section []")
-        plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
-
-        plt.plot()
-        #rectangle = patches.Rectangle((0.1, 0.1), 0.5, 0.3, linewidth=2, edgecolor='r', facecolor='none', angle=45)
-
-        plt.axis("equal")
-        plt.show()
-        return 
