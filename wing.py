@@ -10,22 +10,18 @@ import matplotlib.pyplot as plt
 # Wing Sizing Class
 # ---------------------------
 class WingSizing:
-    def __init__(self, S_w, b, X_LE, X_TE, c_root, c_tip, taper_ratio, MAC, leading_sweep, quart_sweep, trailing_sweep, dihedral, b1, b2):
+    def __init__(self, S_w, b, c_root, c_tip, taper_ratio,
+                 leading_sweep, quart_sweep, dihedral):
         # Wing planform parameter
         self.S_w = S_w
         self.b = b
-        self.X_LE = X_LE
-        self.X_TE = X_TE
         self.c_root = c_root
         self.c_tip = c_tip
         self.taper_ratio = taper_ratio
-        self.MAC = MAC
         self.leading_sweep = leading_sweep
         self.quart_sweep = quart_sweep
-        self.trailing_sweep = trailing_sweep
+        self.trailing_sweep = None
         self.dihedral = dihedral
-        self.b1 = b1
-        self.b2 = b2
 
     # ---------------------------
     # Helper function
@@ -42,7 +38,11 @@ class WingSizing:
     # ---------------------------
     # Plotting method
     # ---------------------------
-    def plot(self):
+    def plot(self, chord_position=0):
+
+        self.trailing_sweep = math.degrees(math.atan(math.tan(math.radians(self.quart_sweep)) + 3 *
+                                                     (self.c_root / (2 * self.b)) * (self.taper_ratio - 1)))  # [deg]
+
         y = np.linspace(0, self.b/2, 200)
         LE = np.array([self.leading_edge(yi) for yi in y])
         TE = np.array([self.trailing_edge(yi) for yi in y])
@@ -54,14 +54,17 @@ class WingSizing:
         plt.plot(y, -LE, label='Leading Edge', color='gray', linewidth=2)
         plt.plot(y, -TE, label='Trailing Edge', color='gray', linewidth=2)
 
-        plt.xlabel('y [m]')
-        plt.ylabel('x [m]')
-        plt.title('Wing Planform')
-        plt.legend()
-
         # Fixed axes
-        plt.axis('equal')
         plt.xlim(0, max(y)*1.1)
         plt.ylim(-max(TE)*1.1,0)
 
+        plt.axis('off')
+
         plt.show()
+        # plt.savefig('planform.png')
+
+
+wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
+                 leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
+
+wing.plot()
