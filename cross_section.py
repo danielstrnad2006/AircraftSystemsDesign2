@@ -47,8 +47,9 @@ class Skin(Component):
         super().__init__(t, l, x_pos, y_pos)
         self.angle =angle
 
-class Stiffener:
+class Stiffener(Component):
     def __init__(self, area, x_pos, y_pos, end_pos):
+        super().__init__(0, 0, x_pos, y_pos)
         self._area = area
         self.x_pos = x_pos
         self.y_pos = y_pos
@@ -151,7 +152,7 @@ class CrossSection:
         x_sum = 0.0
         y_sum = 0.0
 
-        print(f"Generated for cross section y={self.b_cur}m")
+        print(f"Generated for cross section y={self.b_cur:0.2f}m")
 
         if self.display_data:
             print(f"Determine Centroid Location: ") 
@@ -162,23 +163,18 @@ class CrossSection:
         plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
 
         for comp in components:
-            if isinstance(comp, Stiffener) and self.b_cur < comp.end_pos:
-                A = comp.area
-                total_area += A
+            A = 0
+            x_indv = 0
+            y_indv = 0
 
+            if not isinstance(comp, Stiffener) or (isinstance(comp, Stiffener) and self.b_cur < comp.end_pos):
+                A = comp.area
                 x_indv = A * comp.x_pos
                 y_indv = A * comp.y_pos
-                x_sum += x_indv
-                y_sum += y_indv
 
-            if not isinstance(comp, Stiffener):
-                A = comp.area
-                total_area += A
-
-                x_indv = A * comp.x_pos
-                y_indv = A * comp.y_pos
-                x_sum += x_indv
-                y_sum += y_indv
+            total_area += A
+            x_sum += x_indv
+            y_sum += y_indv 
 
             if isinstance(comp, Stiffener) and self.b_cur < comp.end_pos:
                 plt.plot(comp.x_pos, comp.y_pos, 'ro', markersize=6)  # stiffener as dot
@@ -192,7 +188,7 @@ class CrossSection:
                 plt.axis("equal")
 
             if self.display_data:
-                print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_sum:0.2f} \tA*y: {y_sum:0.2f}\t A: {A:0.2f}")
+                print(f"L: {comp.L:0.2f}mm\th: {comp.t:0.2f}mm\t x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_indv:0.2f} \tA*y: {y_indv:0.2f}\t A: {A:0.2f}")
 
         self.assembly_centroid_x = x_sum / total_area
         self.assembly_centroid_y = y_sum / total_area
@@ -211,7 +207,7 @@ class CrossSection:
         
         if not os.path.exists('Plots'):
             os.mkdir('Plots')
-        plt.savefig(f'Plots/cross_section_{self.b_cur}.png', dpi=300)    
+        plt.savefig(f'Plots/cross_section_{self.b_cur:0.2f}.png', dpi=300)    
 
         if self.display_plot:    
             plt.show()
@@ -225,7 +221,10 @@ class CrossSection:
         #Assing value to variables so that they are defined
         I_xx_sum = 0.0
         I_yy_sum = 0.0
-        
+
+        if self.display_data:
+            print(f"Determine Area Moment of Inertia Location: ") 
+
         #Go through the list of component including the spars, skins, and stiffeners
         for comp in components:            
             A = comp.area
@@ -240,8 +239,9 @@ class CrossSection:
                 I_yy = (comp.t * comp.L**3 * (np.cos(comp.angle + np.pi/2)**2)) / 12
 
             #Find the parallel axis term of the component
-            I_xx_parallel_axis = A * (comp.y_pos - self.assembly_centroid_y)**2
-            I_yy_parallel_axis = A * (comp.x_pos - self.assembly_centroid_x)**2   
+            if not isinstance(comp, Stiffener) or (isinstance(comp, Stiffener) and self.b_cur < comp.end_pos):
+                I_xx_parallel_axis = A * (comp.y_pos - self.assembly_centroid_y)**2
+                I_yy_parallel_axis = A * (comp.x_pos - self.assembly_centroid_x)**2   
 
             #Add the I_xx, I_yy about own centroidal axis of the component with the parallel axis term
             I_xx_sum = I_xx_sum + I_xx + I_xx_parallel_axis
@@ -250,6 +250,7 @@ class CrossSection:
             if self.display_data:
                 print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t Ixx: {I_xx:0.2f} \tIyy: {I_yy:0.2f}\t A*y^2: {I_xx_parallel_axis:0.2f}\t A*x^2: {I_yy_parallel_axis:0.2f}")
 
+        print(f"Ixx_sum: {I_xx_sum:0.2f} \tIyy_sum: {I_yy_sum:0.2f}")
         return I_xx_sum, I_yy_sum
     
     
@@ -257,7 +258,6 @@ class CrossSection:
         # Length and angle of the upper skin
         l_skin_up = math.sqrt((self.x_spar1 - self.x_spar2)**2 + (self.y_spar1_up - self.y_spar2_up)**2)
         theta_skin_up = np.atan((self.y_spar2_up - self.y_spar1_up)/(self.x_spar2 - self.x_spar1))
-        
 
         # Length and angle of the lower skin
         l_skin_down = math.sqrt((self.x_spar1 - self.x_spar2)**2 + (self.y_spar1_down - self.y_spar2_down)**2)
@@ -283,7 +283,6 @@ class CrossSection:
 
         skin_up = Skin(self.t_skin_up, l_skin_up, theta_skin_up + np.pi/2, x_bar_skin_up, y_bar_skin_up)
         skin_down = Skin(self.t_skin_down, l_skin_down, theta_skin_down + np.pi/2, x_bar_skin_down, y_bar_skin_down)
-
 
         components = [spar1, spar2, skin_up, skin_down]
 
