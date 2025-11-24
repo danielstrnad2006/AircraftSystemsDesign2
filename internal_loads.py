@@ -334,16 +334,28 @@ def findCritical():
     #set conditions for loadcase 1: MTOW=103 544 kilograms, 
     # ZFW = 62 767.459 kilograms
     # OEW = 43 807.4567 kilograms
-    conds = [[2.5, 103544, 120, 1.225, 100], [-1, 103544, 120, 1.225, 100]]
+    conds = [[2.5, 103544, 138.016, 1.225, 100],
+             [2.5, 103544, 163, 1.225, 100],  
+             [-1, 103544, 87.29, 1.225, 100], 
+             [-1, 103544, 154, 1.225, 100],
+             
+             [2.5, 43807, 89.772, 1.225, 0],
+             [2.5, 43807, 163, 1.225, 0],  
+             [-1, 43807, 56.777, 1.225, 0], 
+             [-1, 43807, 154, 1.225, 0],
+
+             [2.5, 62767, 107.46, 1.225, 0],
+             [2.5, 62767, 163, 1.225, 0],  
+             [-1, 62767, 67.96, 1.225, 0], 
+             [-1, 62767, 154, 1.225, 0]]
+    moment_lst = []
     for cond in conds: 
         halfWing.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
         print()
         print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
         print("The Reaction Shear Force is:", halfWing.reaction_shear)
         print("The Reaction Bending Moment is:", halfWing.reaction_bending)
+        moment_lst.append(halfWing.reaction_bending)
         print()
-
-
-
-
-
+    print(max(moment_lst))
+findCritical()
