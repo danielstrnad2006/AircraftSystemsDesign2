@@ -47,10 +47,11 @@ class Skin(Component):
         self.angle =angle
 
 class Stiffener:
-    def __init__(self, area, x_pos, y_pos):
+    def __init__(self, area, x_pos, y_pos, end_pos):
         self._area = area
         self.x_pos = x_pos
         self.y_pos = y_pos
+        self.end_pos = end_pos
 
     @property
     def area(self):
@@ -149,22 +150,34 @@ class CrossSection:
         plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
 
         for comp in components:
-            A = comp.area
-            total_area += A
 
-            x_indv = A * comp.x_pos
-            y_indv = A * comp.y_pos
-            x_sum += x_indv 
-            y_sum += y_indv 
+            if self.b_cur < self.stiffener.end_pos and isinstance(comp, Stiffener):
+                A = comp.area
+                total_area += A
+
+                x_indv = A * comp.x_pos
+                y_indv = A * comp.y_pos
+                x_sum += x_indv
+                y_sum += y_indv
+
+            if not isinstance(comp, Stiffener):
+                A = comp.area
+                total_area += A
+
+                x_indv = A * comp.x_pos
+                y_indv = A * comp.y_pos
+                x_sum += x_indv
+                y_sum += y_indv
 
             if isinstance(comp, Stiffener):
                 plt.plot(comp.x_pos, comp.y_pos, 'ro', markersize=6)  # stiffener as dot
-            else: 
+            else:
                 rectangle = patches.Rectangle(comp.lower_left_corner, comp.t, comp.L, linewidth=0, edgecolor='gray',
                                               facecolor='gray', angle=np.rad2deg(comp.angle))
                 # draw centroid as a dot
-                plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)   # black dot ("k"), size 4
+                plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)  # black dot ("k"), size 4
                 plt.gca().add_patch(rectangle)  # <- adds to current plot
+                plt.axis("equal")
 
             print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_sum:0.2f} \tA*y: {y_sum:0.2f}\t A: {A:0.2f}")
 
