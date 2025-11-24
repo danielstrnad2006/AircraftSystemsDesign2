@@ -60,11 +60,12 @@ class Stiffener:
 
     
 class CrossSection:
-    def __init__(self, xc_spar1, xc_spar2, chord, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath):
+    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath):
         self.filepath = filepath
         self.xc_spar1 = xc_spar1
         self.xc_spar2 = xc_spar2
         self.chord = chord
+        self.b_cur = b_cur
         self.x_spar1 = xc_spar1*chord
         self.x_spar2 = xc_spar2*chord
         self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
