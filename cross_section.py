@@ -236,7 +236,7 @@ class CrossSection:
             
             print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t Ixx: {I_xx:0.2f} \tIyy: {I_yy:0.2f}\t A*y^2: {I_xx_parallel_axis:0.2f}\t A*x^2: {I_yy_parallel_axis:0.2f}")
 
-        return  
+        return I_xx_sum, I_yy_sum
     
     
     def assembly_centroid_finder(self):
@@ -292,11 +292,11 @@ class CrossSection:
         components.extend(stiffener_objects)
 
         self.find_centroid(components)
-        self.find_AMOI(components)
+        I_xx_sum, I_yy_sum = self.find_AMOI(components)
 
         print(l_skin_up)
         print(np.rad2deg(theta_skin_up))
         print(l_skin_down)
         print(np.rad2deg(theta_skin_down))
-        return 
+        return self.assembly_centroid_x, self.assembly_centroid_y, I_xx_sum, I_yy_sum
 

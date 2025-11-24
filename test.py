@@ -15,10 +15,11 @@ db = 1
 b_cur = 0
 cross_sections = []
 
-centroid_X = []
-centroid_Y = []
+CENTROID_X = []
+CENTROID_Y = []
 I_XX = []
 I_YY = []
+
 while b_cur < wing.b/2:
     stiffeners = [
         (0.3, 'up', 400, 10),
@@ -36,7 +37,16 @@ while b_cur < wing.b/2:
                                 t_skin_up=50, t_skin_down=50, stiffeners=stiffeners,
                                 filepath="airfoils/NASA SC(2)-0414.dat")
 
-    cs.assembly_centroid_finder()
+    centroid_X, centroid_Y, I_xx, I_yy = cs.assembly_centroid_finder()
+
+    CENTROID_X.append(centroid_X)
+    CENTROID_Y.append(centroid_Y)
+    I_XX.append(I_xx)
+    I_YY.append(I_yy)
+
     cross_sections.append(cs)
 
     b_cur = b_cur + db
+
+
+
