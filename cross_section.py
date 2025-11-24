@@ -172,8 +172,8 @@ class CrossSection:
 
         #Add spanwise location to the plot
         try:
-            spanwise_img = plt.imread("/temp/planform.png")
-            scaled_img = OffsetImage(spanwise_img, zoom=0.3)
+            spanwise_img = plt.imread("temp/planform.png")
+            scaled_img = OffsetImage(spanwise_img, zoom=0.2)
             ab = AnnotationBbox(scaled_img, (1, 0), xycoords='axes fraction', box_alignment=(1.1, -0.1))
             plt.gca().add_artist(ab)
         except FileNotFoundError:
