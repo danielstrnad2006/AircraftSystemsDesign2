@@ -11,7 +11,7 @@ class BeamDeflection:
         return 10000 * (1 - y)
 
     def EIxx(self, y):
-        return 5e6 * (0.7 + 0.3 * y)
+        return 71e9 * (0.7 + 0.3 * y)
 
     # INTEGRALS
     def dv_dy(self, y):
@@ -46,8 +46,6 @@ class BeamDeflection:
         plt.grid(True)
 
         plt.show()
-
-
 
 
 beam = BeamDeflection()

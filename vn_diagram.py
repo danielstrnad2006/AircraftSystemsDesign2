@@ -1,10 +1,11 @@
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 from pygments.styles.dracula import purple
 
 class VnDiagram:
     def __init__(self, weight, label, color, g=9.81, rho=1.225, S=149.9,
-                 CL_max=1.452, CL_max_takeoff=2.547, V_C=255.85, V_D=308):
+                 CL_max=1.452, CL_max_takeoff=2.547, V_C=154, V_D=163):
         self.W = weight              # weight in lbs
         self.label = label
         self.color = color
@@ -23,6 +24,16 @@ class VnDiagram:
         self.n_max = max(2.1 + 24000/(self.W + 10000),2.5)
         self.n_min = -1
         self.V_A = self.V_s * math.sqrt(self.n_max)
+
+        print("For:", self.W)
+        print("V_a", self.V_A)
+        print("V_s", self.V_s)
+        print("V_c", self.V_C)
+        print("V_d", self.V_D)
+        print("n_max", self.n_max)
+        print("n_max", self.n_min)
+        print()
+
         self.V_F = 1.6 * self.V_s  # flap speed for MTOW
         self.V_s0 = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max_takeoff * self.S * self.rho))
         self.upper_lim = self.V_s0 * math.sqrt(2)
@@ -81,3 +92,20 @@ class VnDiagram:
         ax.legend()
 
 
+# USAGE
+weights = {
+    "MTOW": 228275.445,
+    "OEW": 96578.91,
+    "ZFW": 138378.56
+}
+colors = ['blue', 'red', 'green']
+
+fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+
+for axis, (name, W), color in zip(ax, weights.items(), colors):
+    diagram = VnDiagram(W, f"V–n Diagram Cruise – {name}", color)
+    diagram.plot(axis)
+
+
+plt.tight_layout()
+plt.show()
