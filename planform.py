@@ -60,6 +60,8 @@ class WingSizing:
 
         # Generate vertical line
         plt.plot([chord_position]*2, [-self.leading_edge(chord_position), -self.trailing_edge(chord_position)], linewidth=3, color='red')
+        plt.xlabel("y [m]")
+        plt.xlabel("x [m]")
         if not os.path.exists('temp'):
             os.mkdir('temp')
         plt.savefig('temp/planform.png', bbox_inches='tight')
