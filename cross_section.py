@@ -159,7 +159,8 @@ class CrossSection:
             if isinstance(comp, Stiffener):
                 plt.plot(comp.x_pos, comp.y_pos, 'ro', markersize=6)  # stiffener as dot
             else: 
-                rectangle = patches.Rectangle(comp.lower_left_corner, comp.t, comp.L, linewidth=0, edgecolor='gray', facecolor='gray', angle=np.rad2deg(comp.angle))
+                rectangle = patches.Rectangle(comp.lower_left_corner, comp.t, comp.L, linewidth=0, edgecolor='gray',
+                                              facecolor='gray', angle=np.rad2deg(comp.angle))
                 # draw centroid as a dot
                 plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)   # black dot ("k"), size 4
                 plt.gca().add_patch(rectangle)  # <- adds to current plot
