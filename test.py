@@ -35,7 +35,7 @@ while b_cur < wing.b/2:
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.6, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
                                 t_spar1=50, t_spar2=50,
                                 t_skin_up=50, t_skin_down=50, stiffeners=stiffeners,
-                                filepath="airfoils/NASA SC(2)-0414.dat")
+                                filepath="airfoils/NASA SC(2)-0414.dat", display_data=False)
 
     centroid_X, centroid_Y, I_xx, I_yy = cs.assembly_centroid_finder()
 

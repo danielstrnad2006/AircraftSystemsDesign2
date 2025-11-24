@@ -151,6 +151,11 @@ class CrossSection:
         x_sum = 0.0
         y_sum = 0.0
 
+        print(f"Generated for cross section y={self.b_cur}m")
+
+        if self.display_data:
+            print(f"Determine Centroid Location: ") 
+
         plt.xlabel("x []")
         plt.ylabel("y []")
         plt.title(f"Airfoil cross section y={self.b_cur}m")
@@ -302,10 +307,5 @@ class CrossSection:
 
         self.find_centroid(components)
         I_xx_sum, I_yy_sum = self.find_AMOI(components)
-
-        print(l_skin_up)
-        print(np.rad2deg(theta_skin_up))
-        print(l_skin_down)
-        print(np.rad2deg(theta_skin_down))
         return self.assembly_centroid_x, self.assembly_centroid_y, I_xx_sum, I_yy_sum
 
