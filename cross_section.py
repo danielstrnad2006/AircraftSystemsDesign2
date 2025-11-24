@@ -4,6 +4,8 @@ from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+
 
 # ---------------------------
 # Airfoil Class
@@ -161,13 +163,23 @@ class CrossSection:
                 # draw centroid as a dot
                 plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)   # black dot ("k"), size 4
                 plt.gca().add_patch(rectangle)  # <- adds to current plot
-                plt.axis("equal")
 
             print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_sum:0.2f} \tA*y: {y_sum:0.2f}\t A: {A:0.2f}")
 
         self.assembly_centroid_x = x_sum / total_area
         self.assembly_centroid_y = y_sum / total_area
-        plt.plot(self.assembly_centroid_x, self.assembly_centroid_y, 'o', markersize=10) 
+        plt.plot(self.assembly_centroid_x, self.assembly_centroid_y, 'o', markersize=10)
+
+        #Add spanwise location to the plot
+        try:
+            spanwise_img = plt.imread("/temp/planform.png")
+            scaled_img = OffsetImage(spanwise_img, zoom=0.3)
+            ab = AnnotationBbox(scaled_img, (1, 0), xycoords='axes fraction', box_alignment=(1.1, -0.1))
+            plt.gca().add_artist(ab)
+        except FileNotFoundError:
+            print("ERROR: Planform image not found")
+
+        plt.axis("equal")
         plt.show()
         return 
     
