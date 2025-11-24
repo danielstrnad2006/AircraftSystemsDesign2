@@ -11,11 +11,15 @@ wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio
                  leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
 
 
-db = 0.1
+db = 1
 b_cur = 0
 cross_sections = []
-while b_cur < wing.b/2:
 
+centroid_X = []
+centroid_Y = []
+I_XX = []
+I_YY = []
+while b_cur < wing.b/2:
     stiffeners = [
         (0.3, 'up', 400, 10),
         (0.4, 'up', 400, 5),

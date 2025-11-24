@@ -4,7 +4,6 @@ from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 
-
 # ---------------------------
 # Wing Sizing Class
 # ---------------------------
@@ -63,7 +62,6 @@ class WingSizing:
 
         # Generate vertical line
         plt.plot([chord_position]*2, [-self.leading_edge(chord_position), -self.trailing_edge(chord_position)], linewidth=3, color='red')
-        plt.axis('off')
         plt.savefig('temp/planform.png', bbox_inches='tight')
 
 

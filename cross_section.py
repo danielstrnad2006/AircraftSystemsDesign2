@@ -201,6 +201,7 @@ class CrossSection:
             print("ERROR: Planform image not found")
 
         plt.axis("equal")
+        plt.ioff()   # turn off interactive mode
         plt.show()
         return 
     
