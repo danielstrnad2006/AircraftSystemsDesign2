@@ -2,44 +2,56 @@ import numpy as np
 import scipy.integrate as sp
 import matplotlib.pyplot as plt
 
-#PARAMETERS/FUNCTION DEF
-def Mx(y):
+class BeamDeflection:
 
-    return 10000 * (1 - y)   # Random value
+    def __init__(self):
+        pass
 
-def EIxx(y):
+    def Mx(self, y):
+        return 10000 * (1 - y)
 
-    return 5e6 * (0.7 + 0.3*y)   # Random value
+    def EIxx(self, y):
+        return 5e6 * (0.7 + 0.3 * y)
 
-#FIRST INTEGRAND
-def dv_dy(y):
-    integrand = lambda s: Mx(s) / EIxx(s)
-    result, _ = sp.quad(integrand, 0, y)
-    return -result
+    # INTEGRALS
+    def dv_dy(self, y):
+        integrand = lambda s: self.Mx(s) / self.EIxx(s)
+        result, _ = sp.quad(integrand, 0, y)
+        return -result
 
-#SECOND INTEGRAND
-def v(y):
-    result, _ = sp.quad(dv_dy, 0, y)
-    return result
+    def v(self, y):
+        result, _ = sp.quad(self.dv_dy, 0, y)
+        return result
 
-# Span (normalised 0–1)
-y_span = np.linspace(0, 1, 200)
+    # MAX DEFLECTION
+    def max_deflection(self, N=200):
+        y_span = np.linspace(0, 1, N)
+        v_span = np.array([self.v(y) for y in y_span])
 
-# Compute slope and deflection
-dv_span = [dv_dy(y) for y in y_span]
-v_span = [v(y) for y in y_span]
+        max_v = np.max(v_span)
+        max_y = y_span[np.argmax(v_span)]
 
-# Plot
-plt.figure()
-plt.plot(y_span, dv_span)
-plt.xlabel("y")
-plt.ylabel("dv/dy")
-plt.title("Slope distribution")
+        return max_v, max_y
 
-plt.figure()
-plt.plot(y_span, v_span)
-plt.xlabel("y")
-plt.ylabel("v(y)")
-plt.title("Deflection distribution")
+    # PLOTS
+    def plot(self, N=200):
+        y_span = np.linspace(0, 1, N)
+        v_span = [self.v(y) for y in y_span]
 
-plt.show()
+        plt.figure()
+        plt.plot(y_span, v_span)
+        plt.xlabel("y")
+        plt.ylabel("v(y)")
+        plt.title("Deflection Distribution")
+        plt.grid(True)
+
+        plt.show()
+
+
+
+
+beam = BeamDeflection()
+beam.plot()
+
+max_v, max_y = beam.max_deflection()
+print(f"Maximum deflection: {max_v:.6f} at y = {max_y:.3f}")
