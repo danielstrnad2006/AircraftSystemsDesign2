@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 #PARAMETERS/FUNCTION DEF
 def Mx(y):
 
-    return 10000 * (1 - y)   # Random
+    return 10000 * (1 - y)   # Random value
 
 def EIxx(y):
 
-    return 5e6 * (0.7 + 0.3*y)   # Random
+    return 5e6 * (0.7 + 0.3*y)   # Random value
 
 #FIRST INTEGRAND
 def dv_dy(y):
