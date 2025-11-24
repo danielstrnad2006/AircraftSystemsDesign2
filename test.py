@@ -25,6 +25,8 @@ while b_cur < wing.b/2:
         (0.5, 'down', 400),
     ]
 
+    wing.plot(chord_position=b_cur)
+
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.6, chord=wing.chord(b_cur)*1000,
                                 t_spar1=50, t_spar2=50,
                                 t_skin_up=50, t_skin_down=50, stiffeners=stiffeners,
@@ -32,5 +34,6 @@ while b_cur < wing.b/2:
 
     cs.assembly_centroid_finder()
     cross_sections.append(cs)
+
 
     b_cur = b_cur + db
