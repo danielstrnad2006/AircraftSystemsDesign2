@@ -1,6 +1,16 @@
 import numpy as np
 import scipy.integrate as sp
 import matplotlib.pyplot as plt
+import internal_loads
+
+
+internal_properties=internal_loads.halfWing
+internal_properties.set_conditions(2.5, 103544, 120, 1.225, 100)
+internal_properties.get_internal_plot()
+moment_distribution = internal_properties.internal_bending
+print(moment_distribution)
+
+
 
 class BeamDeflection:
 
@@ -8,7 +18,8 @@ class BeamDeflection:
         pass
 
     def Mx(self, y):
-        return 10000 * (1 - y)
+        return moment_distribution(y)
+
 
     def EIxx(self, y):
         return 71e9 * (0.7 + 0.3 * y)
@@ -25,7 +36,7 @@ class BeamDeflection:
 
     # MAX DEFLECTION
     def max_deflection(self, N=200):
-        y_span = np.linspace(0, 1, N)
+        y_span = np.linspace(0, 16.0816, N)
         v_span = np.array([self.v(y) for y in y_span])
 
         max_v = np.max(v_span)
@@ -35,7 +46,7 @@ class BeamDeflection:
 
     # PLOTS
     def plot(self, N=200):
-        y_span = np.linspace(0, 1, N)
+        y_span = np.linspace(0, 16.0816, N)
         v_span = [self.v(y) for y in y_span]
 
         plt.figure()

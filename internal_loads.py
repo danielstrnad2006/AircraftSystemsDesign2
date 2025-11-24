@@ -127,16 +127,16 @@ class HalfWing:
 
         cont_normal_force = lambda y: self.Lift(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
 
-        reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
+        self.reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
-        self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear 
+        self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_shear 
         self.internal_shear = self.function_to_intrp1d(self.internal_shear)
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
         #self.reaction_bending = self.function_to_intrp1d(self.reaction_bending)
         self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
-
+        self.internal_bending = self.function_to_intrp1d(self.internal_bending)
         #print(self.reaction_bending)
 
         #this stopped working so I commented it out
@@ -174,6 +174,7 @@ class HalfWing:
         else:
             engine_torque = 0
         return torque_lift + engine_torque
+    
     def torque_plot(self):
         y_vals = np.linspace(0, self.b/2, 1000)
         torques = []
@@ -189,12 +190,7 @@ class HalfWing:
         
 
 
-    def set_conditions(self, velocity, CL_des, rho):
-        self.velocity = velocity #m s^-1
-        self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
-        print("target angle of attack is: ", self.aoa)
-        self.rho = rho #kg m^-3
-        self.compute_internal_forces()
+ 
 
 
 
@@ -290,11 +286,12 @@ class HalfWing:
 
 
 
-    def set_conditions(self, load_factor, weight, velocity, rho):
-        self.velocity = velocity #m s^-1
+    def set_conditions(self, load_factor, weight, v_EAS, rho, fuel_percentage):
+        self.fuel_percentage = fuel_percentage
+        self.velocity = v_EAS*np.sqrt(1.225/rho) #m s^-1, convert EAS to TAS
 
-        self.CL_des = (-weight * self.g* load_factor * 2) / (rho * velocity**2 * self.S)
-
+        self.CL_des = (-weight * self.g * load_factor * 2) / (rho * self.velocity**2 * self.S)
+        print("target design lift coefficient is: ", self.CL_des)
         self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
         print("target angle of attack is: ", self.aoa)
         self.rho = rho #kg m^-3
@@ -307,7 +304,7 @@ class HalfWing:
         Numerically integrates the given integrand function over the half-span of the wing (from y=0 to y=b/2)
         using the trapezoidal rule, and returns the interpolated value of the integral.
         """
-        dy = 0.05
+        dy = 0.1
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         #print(y_pos_lst)
@@ -321,34 +318,44 @@ class HalfWing:
         return integral_cont
 
     def function_to_intrp1d(self, complicated_function):
-        dy = 0.05
+        dy = 0.1
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]
         interpolated = sp.interpolate.interp1d(y_pos_lst, complicated_function_lst, kind='cubic', fill_value="extrapolate")
         return interpolated
 
-
-
-
 halfWing = HalfWing(params_intrpl)
 
-#set conditions for 
-halfWing.set_conditions(load_factor=1, weight=100000, velocity=120, rho=1.225)
-halfWing.update_fuel(percentage=100)
-halfWing.get_forces_plot()
-halfWing.get_internal_plot()
 
 
-halfWing.update_fuel(percentage=10)
-halfWing.get_forces_plot()
-halfWing.get_internal_plot()
+def findCritical():
+    
+    #set conditions for loadcase 1: MTOW=103 544 kilograms, 
+    # ZFW = 62 767.459 kilograms
+    # OEW = 43 807.4567 kilograms
+    conds = [[2.5, 103544, 138.016, 1.225, 100],
+             [2.5, 103544, 163, 1.225, 100],  
+             [-1, 103544, 87.29, 1.225, 100], 
+             [-1, 103544, 154, 1.225, 100],
+             
+             [2.5, 43807, 89.772, 1.225, 0],
+             [2.5, 43807, 163, 1.225, 0],  
+             [-1, 43807, 56.777, 1.225, 0], 
+             [-1, 43807, 154, 1.225, 0],
 
-
-halfWing.update_fuel(percentage=100)
-halfWing.update_g_loading(g_loading=-1.0)
-
-halfWing.get_forces_plot()
-halfWing.get_internal_plot()
-
-
+             [2.5, 62767, 107.46, 1.225, 0],
+             [2.5, 62767, 163, 1.225, 0],  
+             [-1, 62767, 67.96, 1.225, 0], 
+             [-1, 62767, 154, 1.225, 0]]
+    moment_lst = []
+    for cond in conds: 
+        halfWing.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
+        print()
+        print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+        print("The Reaction Shear Force is:", halfWing.reaction_shear)
+        print("The Reaction Bending Moment is:", halfWing.reaction_bending)
+        moment_lst.append(halfWing.reaction_bending)
+        print()
+    print(max(moment_lst))
+findCritical()

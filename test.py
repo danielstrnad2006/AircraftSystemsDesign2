@@ -7,20 +7,25 @@ from cross_section import *
 from planform import *
 
 
-wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
-                 leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
-
-
 db = 0.1
+db = 1
+b = 32.1632
 b_cur = 0
 
 b_pos = []
 cross_sections = []
 
+wing = WingSizing(S_w=149.9, b=b, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
+                 leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
+
 CENTROID_X = []
 CENTROID_Y = []
 I_XX = []
 I_YY = []
+
+def interp(object, location):
+    y = np.arange(0, b / 2, db)
+    return np.interp(location, y, object)
 
 while b_cur < wing.b/2:
     stiffeners = [
