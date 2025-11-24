@@ -128,8 +128,15 @@ class HalfWing:
         cont_normal_force = lambda y: self.Lift(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
 
         reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
-        self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
-        self.reaction_bending = sp.integrate.quad(lambda y: float(self.internal_shear(y)), 0, self.y_engine)[0] + sp.integrate.quad(lambda y: float(self.internal_shear(y)), self.y_engine, self.b/2)[0]
+        self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
+
+        self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear 
+        self.internal_shear = self.function_to_intrp1d(self.internal_shear)
+        #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
+        self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
+        #self.reaction_bending = self.function_to_intrp1d(self.reaction_bending)
+        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
+
         #print(self.reaction_bending)
 
         #this stopped working so I commented it out
@@ -174,8 +181,6 @@ class HalfWing:
         for yi in y_vals:
             cum_torque= self.internal_torque(yi)
             torques.append(cum_torque)
-       
-        import matplotlib.pyplot as plt
         plt.plot(y_vals, torques-sum)
         plt.xlabel("Spanwise position y [m]")
         plt.ylabel("Cumulative torque [Nm]")
@@ -231,25 +236,36 @@ class HalfWing:
     
 
 
-    def get_internal_shear_plot(self):
-        y = np.linspace(0, self.b/2, 400)
+    def get_forces_plot(self):
+        y = np.linspace(0, self.b/2, 120)
         dry_wing_plot = [self.g*self.g_loading*self.wing_mu(y_pos) for y_pos in y]
         fuel_plot = [self.g*self.g_loading*self.fuel_mass_distribution(y_pos) for y_pos in y]
         lift_plot = [self.Lift(y_pos) for y_pos in y]
-        Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
-        #Mx_plot = [self.internal_bending(y_pos) for y_pos in y]
-
         fig, ax1 = plt.subplots()
-        l1, = ax1.plot(y, dry_wing_plot, label="wing structure weight distribution [N]")
-        l2, = ax1.plot(y, fuel_plot, label="fuel weight distribution [N]")
-        l3, = ax1.plot(y, lift_plot, label="Lift distribution [N]")
+        l1, = ax1.plot(y, dry_wing_plot, label="dry wing structure weight distribution [N/m]")
+        l2, = ax1.plot(y, fuel_plot, label="fuel weight distribution [N/m]")
+        l3, = ax1.plot(y, lift_plot, label="Lift distribution [N/m]")
         ax1.set_xlabel("y [m]")
-        ax1.set_ylabel("force per unit span [N]")
+        ax1.set_ylabel("force per unit span [N/m]")
+        handles = [l1, l2, l3]
+        labels = [h.get_label() for h in handles]
+        ax1.legend(handles, labels, loc='lower right')
+
+        plt.show()
+
+    def get_internal_plot(self):
+        y = np.linspace(0, self.b/2, 120)
+        Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
+        Mx_plot = [self.internal_bending(y_pos) for y_pos in y]
+        fig, ax1 = plt.subplots()
+        l1, = ax1.plot(y, Vz_plot, label="Internal Shear Force [N]")
+        ax1.set_xlabel("y [m]")
+        ax1.set_ylabel("Internal Force [N]")
 
         ax2 = ax1.twinx()
-        l4, = ax2.plot(y, Vz_plot, color='k', label="internal shear distribution [N]")
-        ax2.set_ylabel("internal shear [N]")
-        handles = [l1, l2, l3, l4]
+        l2, = ax2.plot(y, Mx_plot, color='k', label="internal bending moment distribution [Nm]")
+        ax2.set_ylabel("Internal Moment [N]")
+        handles = [l1, l2]
         labels = [h.get_label() for h in handles]
         ax1.legend(handles, labels, loc='lower right')
 
@@ -273,6 +289,7 @@ class HalfWing:
     #     self.compute_internal_forces()
 
 
+
     def set_conditions(self, load_factor, weight, velocity, rho):
         self.velocity = velocity #m s^-1
 
@@ -285,17 +302,53 @@ class HalfWing:
 
 
 
+    def integrate_halfspan(self, integrand):
+        """
+        Numerically integrates the given integrand function over the half-span of the wing (from y=0 to y=b/2)
+        using the trapezoidal rule, and returns the interpolated value of the integral.
+        """
+        dy = 0.05
+        length = self.b/2
+        y_pos_lst = np.arange(0, length, dy)
+        #print(y_pos_lst)
+        integrand_lst = [integrand(y_pos) for y_pos in y_pos_lst]
+        #print(integrand_lst)
+        integral_lst = [0]
+        for i in range(1, len(integrand_lst)):
+            new_integrand = integrand_lst[:i]
+            integral_lst.append(sum(new_integrand)*dy)
+        integral_cont = sp.interpolate.interp1d(y_pos_lst, integral_lst, kind='cubic', fill_value="extrapolate")
+        return integral_cont
+
+    def function_to_intrp1d(self, complicated_function):
+        dy = 0.05
+        length = self.b/2
+        y_pos_lst = np.arange(0, length, dy)
+        complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]
+        interpolated = sp.interpolate.interp1d(y_pos_lst, complicated_function_lst, kind='cubic', fill_value="extrapolate")
+        return interpolated
+
+
+
 
 halfWing = HalfWing(params_intrpl)
 
+#set conditions for 
 halfWing.set_conditions(load_factor=1, weight=100000, velocity=120, rho=1.225)
-halfWing.get_coefficient_plots()
-halfWing.torque_plot()
-halfWing.get_internal_shear_plot()
-halfWing.update_fuel(percentage=10)
-halfWing.get_internal_shear_plot()
 halfWing.update_fuel(percentage=100)
-halfWing.update_g_loading(g_loading=-1.5)
-halfWing.get_internal_shear_plot()
+halfWing.get_forces_plot()
+halfWing.get_internal_plot()
+
+
+halfWing.update_fuel(percentage=10)
+halfWing.get_forces_plot()
+halfWing.get_internal_plot()
+
+
+halfWing.update_fuel(percentage=100)
+halfWing.update_g_loading(g_loading=-1.0)
+
+halfWing.get_forces_plot()
+halfWing.get_internal_plot()
 
 
