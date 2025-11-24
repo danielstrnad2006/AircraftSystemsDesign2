@@ -127,10 +127,10 @@ class HalfWing:
 
         cont_normal_force = lambda y: self.Lift(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
 
-        reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
+        self.reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
-        self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear 
+        self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_shear 
         self.internal_shear = self.function_to_intrp1d(self.internal_shear)
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
@@ -174,6 +174,7 @@ class HalfWing:
         else:
             engine_torque = 0
         return torque_lift + engine_torque
+    
     def torque_plot(self):
         y_vals = np.linspace(0, self.b/2, 1000)
         torques = []
@@ -189,12 +190,13 @@ class HalfWing:
         
 
 
-    def set_conditions(self, velocity, CL_des, rho):
-        self.velocity = velocity #m s^-1
-        self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
-        print("target angle of attack is: ", self.aoa)
-        self.rho = rho #kg m^-3
-        self.compute_internal_forces()
+    #def set_conditions(self, v_EAS, CL_des, rho, fuel_percentage):
+    #    self.fuel_percentage = fuel_percentage
+    #    self.velocity = v_EAS*np.sqrt(1.225/rho) #m s^-1, convert EAS to TAS
+    #    self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
+    #    print("target angle of attack is: ", self.aoa)
+    #    self.rho = rho #kg m^-3
+    #    self.compute_internal_forces()
 
 
 
@@ -290,10 +292,11 @@ class HalfWing:
 
 
 
-    def set_conditions(self, load_factor, weight, velocity, rho):
-        self.velocity = velocity #m s^-1
+    def set_conditions(self, load_factor, weight, v_EAS, rho, fuel_percentage):
+        self.fuel_percentage = fuel_percentage
+        self.velocity = v_EAS*np.sqrt(1.225/rho) #m s^-1, convert EAS to TAS
 
-        self.CL_des = (-weight * self.g* load_factor * 2) / (rho * velocity**2 * self.S)
+        self.CL_des = (-weight * self.g* load_factor * 2) / (rho * self.velocity**2 * self.S)
 
         self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
         print("target angle of attack is: ", self.aoa)
@@ -331,24 +334,24 @@ class HalfWing:
 
 
 
-halfWing = HalfWing(params_intrpl)
-
-#set conditions for 
-halfWing.set_conditions(load_factor=1, weight=100000, velocity=120, rho=1.225)
-halfWing.update_fuel(percentage=100)
-halfWing.get_forces_plot()
-halfWing.get_internal_plot()
 
 
-halfWing.update_fuel(percentage=10)
-halfWing.get_forces_plot()
-halfWing.get_internal_plot()
 
+def findCritical():
+    halfWing = HalfWing(params_intrpl)
+    #set conditions for loadcase 1: MTOW=103 544 kilograms, 
+    # ZFW = 62 767.459 kilograms
+    # OEW = 43 807.4567 kilograms
+    conds = [[2.5, 103544, 120, 1.225, 100], [-1, 103544, 120, 1.225, 100]]
+    for cond in conds: 
+        halfWing.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
+        print()
+        print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+        print("The Reaction Shear Force is:", halfWing.reaction_shear)
+        print("The Reaction Bending Moment is:", halfWing.reaction_bending)
+        print()
 
-halfWing.update_fuel(percentage=100)
-halfWing.update_g_loading(g_loading=-1.0)
+findCritical()
 
-halfWing.get_forces_plot()
-halfWing.get_internal_plot()
 
 
