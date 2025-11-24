@@ -136,7 +136,7 @@ class HalfWing:
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
         #self.reaction_bending = self.function_to_intrp1d(self.reaction_bending)
         self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
-
+        self.internal_bending = self.function_to_intrp1d(self.internal_bending)
         #print(self.reaction_bending)
 
         #this stopped working so I commented it out
@@ -304,7 +304,7 @@ class HalfWing:
         Numerically integrates the given integrand function over the half-span of the wing (from y=0 to y=b/2)
         using the trapezoidal rule, and returns the interpolated value of the integral.
         """
-        dy = 0.05
+        dy = 0.1
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         #print(y_pos_lst)
@@ -318,21 +318,19 @@ class HalfWing:
         return integral_cont
 
     def function_to_intrp1d(self, complicated_function):
-        dy = 0.05
+        dy = 0.1
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]
         interpolated = sp.interpolate.interp1d(y_pos_lst, complicated_function_lst, kind='cubic', fill_value="extrapolate")
         return interpolated
 
-
-
-
+halfWing = HalfWing(params_intrpl)
 
 
 
 def findCritical():
-    halfWing = HalfWing(params_intrpl)
+    
     #set conditions for loadcase 1: MTOW=103 544 kilograms, 
     # ZFW = 62 767.459 kilograms
     # OEW = 43 807.4567 kilograms
@@ -345,7 +343,7 @@ def findCritical():
         print("The Reaction Bending Moment is:", halfWing.reaction_bending)
         print()
 
-findCritical()
+
 
 
 
