@@ -1,7 +1,7 @@
 #torsion deflection
 import matplotlib.pyplot as plt
 import scipy as sp
-from Daniel_Tries_Some_Code import HalfWing, centroid_position
+from internal_loads import HalfWing, centroid_position
 import numpy as np
 
 
