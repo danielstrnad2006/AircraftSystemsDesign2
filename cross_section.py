@@ -51,17 +51,21 @@ class Stiffener:
         self._area = area
         self.x_pos = x_pos
         self.y_pos = y_pos
-        self.end_pos = end_pos
+        self._end_pos = end_pos
 
     @property
     def area(self):
         return self._area
 
+    @property
+    def end_pos(self):
+        return self._end_pos
+
 
 
     
 class CrossSection:
-    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath):
+    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath, display_data=False):
         self.filepath = filepath
         self.xc_spar1 = xc_spar1
         self.xc_spar2 = xc_spar2
@@ -70,6 +74,7 @@ class CrossSection:
         self.x_spar1 = xc_spar1*chord
         self.x_spar2 = xc_spar2*chord
         self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
+        self.display_data = display_data
         
         self.assembly_centroid_x = 0
         self.assembly_centroid_y = 0
@@ -150,8 +155,7 @@ class CrossSection:
         plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
 
         for comp in components:
-
-            if self.b_cur < self.stiffener.end_pos and isinstance(comp, Stiffener):
+            if isinstance(comp, Stiffener) and self.b_cur < comp.end_pos:
                 A = comp.area
                 total_area += A
 
@@ -169,9 +173,10 @@ class CrossSection:
                 x_sum += x_indv
                 y_sum += y_indv
 
-            if isinstance(comp, Stiffener):
+            if isinstance(comp, Stiffener) and self.b_cur < comp.end_pos:
                 plt.plot(comp.x_pos, comp.y_pos, 'ro', markersize=6)  # stiffener as dot
-            else:
+
+            if not isinstance(comp, Stiffener):
                 rectangle = patches.Rectangle(comp.lower_left_corner, comp.t, comp.L, linewidth=0, edgecolor='gray',
                                               facecolor='gray', angle=np.rad2deg(comp.angle))
                 # draw centroid as a dot
@@ -179,7 +184,8 @@ class CrossSection:
                 plt.gca().add_patch(rectangle)  # <- adds to current plot
                 plt.axis("equal")
 
-            print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_sum:0.2f} \tA*y: {y_sum:0.2f}\t A: {A:0.2f}")
+            if self.display_data:
+                print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_sum:0.2f} \tA*y: {y_sum:0.2f}\t A: {A:0.2f}")
 
         self.assembly_centroid_x = x_sum / total_area
         self.assembly_centroid_y = y_sum / total_area
@@ -268,7 +274,7 @@ class CrossSection:
 
         # now create Stiffener objects from your list of tuples
         stiffener_objects = []
-        for xc_rel, side, area in self.stiffener:  # self.stiffener is list of (xc, 'up/down', area)
+        for xc_rel, side, area, end_pos in self.stiffener:  # self.stiffener is list of (xc, 'up/down', area, end position)
             x_stiffener = xc_rel * self.chord  # convert relative chord to absolute x
 
             # get y position on the airfoil
@@ -278,7 +284,7 @@ class CrossSection:
                 y_stiffener = l_skin_down*(x_stiffener/(self.x_spar2-self.x_spar1))*np.sin(theta_skin_down) + self.y_spar1_down + self.t_skin_down/2
 
             # create Stiffener object
-            stiff = Stiffener(area=area, x_pos=x_stiffener, y_pos=y_stiffener)
+            stiff = Stiffener(area=area, x_pos=x_stiffener, y_pos=y_stiffener, end_pos=end_pos)
             stiffener_objects.append(stiff)
 
         # add stiffeners to components
