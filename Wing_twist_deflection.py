@@ -5,7 +5,7 @@ from internal_loads import HalfWing, centroid_position
 import numpy as np
 
 
-G=10^7
+G=10**7
 
 def wing_tip_twist(self, bound):
     sum=self.internal_torque(self.b/2)

@@ -5,6 +5,7 @@ from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import os
 
 
 # ---------------------------
@@ -65,7 +66,7 @@ class Stiffener:
 
     
 class CrossSection:
-    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath, display_data=False):
+    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath, display_data=False, display_plot=False):
         self.filepath = filepath
         self.xc_spar1 = xc_spar1
         self.xc_spar2 = xc_spar2
@@ -75,6 +76,7 @@ class CrossSection:
         self.x_spar2 = xc_spar2*chord
         self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
         self.display_data = display_data
+        self.display_plot = display_plot
         
         self.assembly_centroid_x = 0
         self.assembly_centroid_y = 0
@@ -149,9 +151,14 @@ class CrossSection:
         x_sum = 0.0
         y_sum = 0.0
 
+        print(f"Generated for cross section y={self.b_cur}m")
+
+        if self.display_data:
+            print(f"Determine Centroid Location: ") 
+
         plt.xlabel("x []")
         plt.ylabel("y []")
-        plt.title("Airfoil cross section []")
+        plt.title(f"Airfoil cross section y={self.b_cur}m")
         plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
 
         for comp in components:
@@ -201,7 +208,15 @@ class CrossSection:
             print("ERROR: Planform image not found")
 
         plt.axis("equal")
-        plt.show()
+        
+        if not os.path.exists('Plots'):
+            os.mkdir('Plots')
+        plt.savefig(f'Plots/cross_section_{self.b_cur}.png', dpi=300)    
+
+        if self.display_plot:    
+            plt.show()
+        else:
+            plt.close()
         return 
     
     #Function to find I_xx and I_yy values for the whole assembly (cross section)
@@ -232,10 +247,10 @@ class CrossSection:
             I_xx_sum = I_xx_sum + I_xx + I_xx_parallel_axis
             I_yy_sum = I_yy_sum + I_yy + I_yy_parallel_axis
          
-            
-            print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t Ixx: {I_xx:0.2f} \tIyy: {I_yy:0.2f}\t A*y^2: {I_xx_parallel_axis:0.2f}\t A*x^2: {I_yy_parallel_axis:0.2f}")
+            if self.display_data:
+                print(f"x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t Ixx: {I_xx:0.2f} \tIyy: {I_yy:0.2f}\t A*y^2: {I_xx_parallel_axis:0.2f}\t A*x^2: {I_yy_parallel_axis:0.2f}")
 
-        return  
+        return I_xx_sum, I_yy_sum
     
     
     def assembly_centroid_finder(self):
@@ -291,11 +306,6 @@ class CrossSection:
         components.extend(stiffener_objects)
 
         self.find_centroid(components)
-        self.find_AMOI(components)
-
-        print(l_skin_up)
-        print(np.rad2deg(theta_skin_up))
-        print(l_skin_down)
-        print(np.rad2deg(theta_skin_down))
-        return 
+        I_xx_sum, I_yy_sum = self.find_AMOI(components)
+        return self.assembly_centroid_x, self.assembly_centroid_y, I_xx_sum, I_yy_sum
 
