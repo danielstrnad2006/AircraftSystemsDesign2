@@ -190,13 +190,7 @@ class HalfWing:
         
 
 
-    #def set_conditions(self, v_EAS, CL_des, rho, fuel_percentage):
-    #    self.fuel_percentage = fuel_percentage
-    #    self.velocity = v_EAS*np.sqrt(1.225/rho) #m s^-1, convert EAS to TAS
-    #    self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
-    #    print("target angle of attack is: ", self.aoa)
-    #    self.rho = rho #kg m^-3
-    #    self.compute_internal_forces()
+ 
 
 
 
@@ -296,8 +290,8 @@ class HalfWing:
         self.fuel_percentage = fuel_percentage
         self.velocity = v_EAS*np.sqrt(1.225/rho) #m s^-1, convert EAS to TAS
 
-        self.CL_des = (-weight * self.g* load_factor * 2) / (rho * self.velocity**2 * self.S)
-
+        self.CL_des = (-weight * self.g * load_factor * 2) / (rho * self.velocity**2 * self.S)
+        print("target design lift coefficient is: ", self.CL_des)
         self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
         print("target angle of attack is: ", self.aoa)
         self.rho = rho #kg m^-3
