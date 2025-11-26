@@ -1,23 +1,16 @@
 import numpy as np
 import scipy.integrate as sp
 import matplotlib.pyplot as plt
-import internal_loads
-
-
-internal_properties=internal_loads.halfWing
-internal_properties.set_conditions(2.5, 103544, 163, 1.225, 100)
-#internal_properties.get_internal_plot()
-moment_distribution = internal_properties.internal_bending
-#print(moment_distribution)
 
 
 
 class BeamDeflection:
 
-    def __init__(self, b, db):
+    def __init__(self, b, db, moment_distrib):
         self.b = b
         self.db = db
         self.I_XX = 0
+        self.moment_distribution = moment_distrib
     
     def assignI_XX(self, I_xx):
         self.I_XX = I_xx
@@ -27,7 +20,7 @@ class BeamDeflection:
         return np.interp(location, y, self.I_XX)
     
     def Mx(self, y):
-        return moment_distribution(y)
+        return self.moment_distribution(y)
 
 
     def EIxx(self, y):
