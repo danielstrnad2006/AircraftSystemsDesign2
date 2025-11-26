@@ -83,8 +83,10 @@ class WingSizing:
 
 
         # Save to PNG
-        plt.savefig('temp/planform.png', dpi=150, bbox_inches='tight')
-        plt.close(fig)
+        # plt.savefig('temp/planform.png', dpi=150, bbox_inches='tight')
+        # plt.close(fig)
+
+        return fig, ax
 
 
 # wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,

@@ -11,6 +11,7 @@ db = 0.1
 db = 1
 b = 32.1632
 b_cur = 0
+SAVE_PLOTS = False
 
 b_pos = []
 cross_sections = []
@@ -38,14 +39,27 @@ while b_cur < wing.b/2:
         (0.4, 'down', 40000, 5),
     ]
 
-    img = wing.plot(chord_position=b_cur)
+    if SAVE_PLOTS:
+        fig_pf, ax_pf = wing.plot(chord_position=b_cur)
+
+        # render it to a numpy RGBA image
+        fig_pf.canvas.draw()
+        w, h = fig_pf.canvas.get_width_height()
+        buf = np.frombuffer(fig_pf.canvas.buffer_rgba(), dtype=np.uint8)
+        spanwise_img = buf.reshape(h, w, 4)
+
+        # we don't need the figure object anymore
+        plt.close(fig_pf)
+    else:
+        spanwise_img = None
 
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.6, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
                                 t_spar1=5, t_spar2=5,
                                 t_skin_up=5, t_skin_down=5, stiffeners=stiffeners,
-                                filepath="airfoils/NASA SC(2)-0414.dat", display_plot=True, planform=img)
+                                filepath="airfoils/NASA SC(2)-0414.dat", save_plot=SAVE_PLOTS)
 
-    cs.new_planform(img)
+    cs.new_planform(spanwise_img)
+
     centroid_X, centroid_Y, I_xx, I_yy = cs.assembly_centroid_finder()
     b_pos.append(b_cur)
     CENTROID_X.append(centroid_X)
@@ -57,7 +71,11 @@ while b_cur < wing.b/2:
 
     b_cur = b_cur + db
 
-os.remove("temp/base_planform.pickle")
+try:
+    os.remove("temp/base_planform.pickle")
+except:
+    pass
+
 
 plt.figure()
 

@@ -69,7 +69,8 @@ class Stiffener(Component):
     
 class CrossSection:
     def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners,
-                 filepath, planform, display_data=False, display_plot=False):
+                 filepath, display_data=False, display_plot=False, save_plot=False):
+        self.planform = None
         self.filepath = filepath
         self.xc_spar1 = xc_spar1
         self.xc_spar2 = xc_spar2
@@ -80,6 +81,7 @@ class CrossSection:
         self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
         self.display_data = display_data
         self.display_plot = display_plot
+        self.save_plot = save_plot
         
         self.assembly_centroid_x = 0
         self.assembly_centroid_y = 0
@@ -99,8 +101,6 @@ class CrossSection:
 
         self.t_skin_up = t_skin_up
         self.t_skin_down = t_skin_down
-
-        self.planform = planform
 
     def _import_airfoil(self, filepath):
         x, y = [], []
@@ -136,7 +136,7 @@ class CrossSection:
         if x_lower[0] > x_lower[-1]:
             x_lower = np.flip(x_lower)
             y_lower = np.flip(y_lower)
-        
+
         return x, y, x_upper, y_upper, x_lower, y_lower
 
     def new_planform(self, planform):
@@ -162,12 +162,13 @@ class CrossSection:
         print(f"Generated for cross section y={self.b_cur:0.2f}m")
 
         if self.display_data:
-            print(f"Determine Centroid Location: ") 
+            print(f"Determine Centroid Location: ")
 
-        plt.xlabel("x []")
-        plt.ylabel("y []")
-        plt.title(f"Airfoil cross section y={self.b_cur}m")
-        plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
+        if self.save_plot:
+            plt.xlabel("x []")
+            plt.ylabel("y []")
+            plt.title(f"Airfoil cross section y={self.b_cur}m")
+            plt.plot(self.x, self.y, 'k')  # plot the airfoil outline
 
         for comp in components:
             A = 0
@@ -183,44 +184,52 @@ class CrossSection:
             x_sum += x_indv
             y_sum += y_indv 
 
-            if isinstance(comp, Stiffener) and self.b_cur < comp.end_pos:
+            if isinstance(comp, Stiffener) and self.b_cur < comp.end_pos and self.save_plot:
                 plt.plot(comp.x_pos, comp.y_pos, 'ro', markersize=6)  # stiffener as dot
 
             if not isinstance(comp, Stiffener):
                 rectangle = patches.Rectangle(comp.lower_left_corner, comp.t, comp.L, linewidth=0, edgecolor='gray',
                                               facecolor='gray', angle=np.rad2deg(comp.angle))
-                # draw centroid as a dot
-                plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)  # black dot ("k"), size 4
-                plt.gca().add_patch(rectangle)  # <- adds to current plot
-                plt.axis("equal")
+
+                if self.save_plot:
+                    # draw centroid as a dot
+                    plt.plot(comp.x_pos, comp.y_pos, 'ko', markersize=4)  # black dot ("k"), size 4
+                    plt.gca().add_patch(rectangle)  # <- adds to current plot
+                    plt.axis("equal")
 
             if self.display_data:
                 print(f"L: {comp.L:0.2f}mm\th: {comp.t:0.2f}mm\t x: {comp.x_pos:0.2f}\ty: {comp.y_pos:0.2f}\t A*x: {x_indv:0.2f} \tA*y: {y_indv:0.2f}\t A: {A:0.2f}")
 
         self.assembly_centroid_x = x_sum / total_area
         self.assembly_centroid_y = y_sum / total_area
-        plt.plot(self.assembly_centroid_x, self.assembly_centroid_y, 'o', markersize=10)
+
+        if self.save_plot:
+            plt.plot(self.assembly_centroid_x, self.assembly_centroid_y, 'o', markersize=10)
 
         #Add spanwise location to the plot
-        # Add spanwise location to the plot using the planform figure
-        try:
-            spanwise_img = plt.imread("temp/planform.png")
-            scaled_img = OffsetImage(spanwise_img, zoom=0.2)
-            ab = AnnotationBbox(scaled_img, (1, 0), ...)
+        # Add spanwise location to the plot using in-memory image
+        if self.planform is not None and self.save_plot:
+            scaled_img = OffsetImage(self.planform, zoom=0.11)
+            ab = AnnotationBbox(
+                scaled_img,
+                (1, 0),
+                xycoords='axes fraction',
+                box_alignment=(1.1, -0.1),
+            )
             plt.gca().add_artist(ab)
-        except FileNotFoundError:
-            print("ERROR: Planform image not found")
 
-        plt.axis("equal")
-        
-        if not os.path.exists('Plots'):
-            os.mkdir('Plots')
-        plt.savefig(f'Plots/cross_section_{self.b_cur:0.2f}.webp', dpi=300)
 
-        if self.display_plot:    
-            plt.show()
-        else:
-            plt.close()
+        if self.save_plot:
+            plt.axis("equal")
+
+            if not os.path.exists('Plots'):
+                os.mkdir('Plots')
+            plt.savefig(f'Plots/cross_section_{self.b_cur:0.2f}.png', dpi=300)
+
+            if self.display_plot:
+                plt.show()
+            else:
+                plt.close()
         return 
     
     #Function to find I_xx and I_yy values for the whole assembly (cross section)
