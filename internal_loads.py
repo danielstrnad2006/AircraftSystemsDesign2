@@ -139,6 +139,7 @@ class HalfWing:
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
         self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.Lift(y)
+
         self.reaction_torsion = self.integrate_halfspan(self.internal_torsion)(self.b/2)
         self.internal_torsion = lambda y: self.integrate_halfspan(self.internal_torsion)(y) - self.reaction_torsion
         self.internal_torsion = self.function_to_intrp1d(self.internal_torsion)
@@ -183,6 +184,7 @@ class HalfWing:
         plt.ylabel("Cumulative torque [Nm]")
         plt.grid(True)
         plt.show()   
+        
         
 
 

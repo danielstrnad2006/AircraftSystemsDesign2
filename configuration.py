@@ -85,3 +85,4 @@ plt.show()
 print(I_XX)
 print(CENTROID_X)
 print(J_P)
+a
