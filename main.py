@@ -5,6 +5,7 @@
 import internal_loads
 from Wing_twist_deflection import  twist_plot, wing_tip_twist
 from Bending_Deflection import BeamDeflection
+
 import math
 import numpy as np
 from scipy.optimize import fsolve
@@ -31,9 +32,9 @@ for cond in crit_conds:
     internal_properties.get_forces_plot()
     internal_properties.get_internal_plot()
     #internal_properties.torque_plot()
-    internal_properties.set_torsion_params(db, CENTROID_X, J_P)
+    #internal_properties.set_torsion_params(db, CENTROID_X, J_P)
 
-    #twist_plot(internal_properties, CENTROID_X, J_P, b, db)
+    twist_plot(internal_properties, CENTROID_X, J_P, b, db)
     moment_distribution = internal_properties.internal_bending
 
     #PLOT BEAM DEFLECTION

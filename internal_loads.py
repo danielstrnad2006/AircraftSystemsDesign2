@@ -139,11 +139,11 @@ class HalfWing:
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
         self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.Lift(y)
-
+        '''
         self.reaction_torsion = self.integrate_halfspan(self.internal_torsion)(self.b/2)
         self.internal_torsion = lambda y: self.integrate_halfspan(self.internal_torsion)(y) - self.reaction_torsion
         self.internal_torsion = self.function_to_intrp1d(self.internal_torsion)
-
+        '''
 
     def torque_per_span(self,y):
         # different torques: torque due to lift, no torque due to wing weight, point torque due to engine thrust and weight, 
@@ -172,6 +172,7 @@ class HalfWing:
             engine_torque = 0
         return torque_lift + engine_torque
     
+
     def torque_plot(self):
         y_vals = np.linspace(0, self.b/2, 1000)
         torques = []
@@ -184,7 +185,7 @@ class HalfWing:
         plt.ylabel("Cumulative torque [Nm]")
         plt.grid(True)
         plt.show()   
-        
+
         
 
 
@@ -266,6 +267,16 @@ class HalfWing:
         handles = [l1, l2]
         labels = [h.get_label() for h in handles]
         ax1.legend(handles, labels, loc='lower right')
+
+        plt.show()
+
+    def get_internal_torsion_plot(self):
+        y = np.linspace(0, self.b/2, 120)
+        My_plot = [self.internal_torsion(y_pos) for y_pos in y]
+        fig, ax1 = plt.subplots()
+        l1, = ax1.plot(y, My_plot, label="Internal Shear Force [N]")
+        ax1.set_xlabel("y [m]")
+        ax1.set_ylabel("Internal Force [N]")
 
         plt.show()
 
