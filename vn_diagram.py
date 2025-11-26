@@ -5,7 +5,7 @@ from pygments.styles.dracula import purple
 
 class VnDiagram:
     def __init__(self, weight, label, color, g=9.81, rho=1.225, S=149.9,
-                 CL_max=1.452, CL_max_takeoff=2.547, V_C=154, V_D=163):
+                 CL_max=1.452, CL_max_takeoff=2.547,CL_max_landing=2.575, V_C=154, V_D=163):
         self.W = weight              # weight in lbs
         self.label = label
         self.color = color
@@ -14,6 +14,7 @@ class VnDiagram:
         self.S = S
         self.CL_max = CL_max
         self.CL_max_takeoff = CL_max_takeoff
+        self.CL_max_landing = CL_max_landing
         self.V_C = V_C
         self.V_D = V_D
         self.calculate_speeds_and_limits()
@@ -21,6 +22,7 @@ class VnDiagram:
     def calculate_speeds_and_limits(self):
         # Stall speed
         self.V_s = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max * self.S * self.rho))
+
         self.n_max = max(2.1 + 24000/(self.W + 10000),2.5)
         self.n_min = -1
         self.V_A = self.V_s * math.sqrt(self.n_max)
@@ -34,9 +36,11 @@ class VnDiagram:
         print("n_max", self.n_min)
         print()
 
-        self.V_F = 1.6 * self.V_s  # flap speed for MTOW
-        self.V_s0 = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max_takeoff * self.S * self.rho))
-        self.upper_lim = self.V_s0 * math.sqrt(2)
+        self.V_F_TO = 1.6 * self.V_s  # flap speed for MTOW to
+        self.V_F_L= 1.8 * self.V_s0_L
+        self.V_s0_TO = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max_takeoff * self.S * self.rho))
+        self.V_s0_L = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max_landing * self.S * self.rho))
+        self.upper_lim = self.V_s0_TO * math.sqrt(2)
 
     def plot(self, ax):
         # Positive stall curve
@@ -45,9 +49,9 @@ class VnDiagram:
 
         # Flap curve (only for MTOW)
         V_flap = np.linspace(0, self.upper_lim, 100)
-        n_flap = (V_flap / self.V_s0)**2
+        n_flap = (V_flap / self.V_s0_TO) ** 2
 
-        V_extended = [self.upper_lim, min(self.V_F, math.sqrt(2)*self.V_s)]
+        V_extended = [self.upper_lim, min(self.V_F_TO, math.sqrt(2) * self.V_s)]
         n_extended = [2, 2]
 
         # Positive limit
