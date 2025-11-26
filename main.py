@@ -26,7 +26,6 @@ for cond in crit_conds:
     internal_properties.get_internal_plot()
     #internal_properties.torque_plot()
     #twist_plot(internal_properties)
-    internal_properties.get_internal_plot()
     moment_distribution = internal_properties.internal_bending
 
 
