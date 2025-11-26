@@ -137,16 +137,6 @@ class HalfWing:
         #self.reaction_bending = self.function_to_intrp1d(self.reaction_bending)
         self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
-        #print(self.reaction_bending)
-
-        #this stopped working so I commented it out
-
-
-
-        #self.internal_bending = lambda y: -sp.integrate.quad(self.internal_shear, y, self.b/2)[0] + self.reaction_bending
-        #self.torsionMoment = lambda y: (self.x_cp_distance(y)-self.x_centroid_distance(y)) * self.Lift(y) #Nm/m
-        #self.torsionMoment_total, _ = sp.integrate.quad(lambda y: self.torsionMoment(y), 0, self.b/2)
-        #self.internalTorsion = lambda y: -self.torsionMoment+sp.integrate.quad(lambda y: self.torsionMoment(y), 0, y)
 
 
     def torque_per_span(self,y):
