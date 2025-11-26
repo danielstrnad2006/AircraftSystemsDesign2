@@ -7,8 +7,7 @@ from cross_section import *
 from planform import *
 
 
-db = 0.1
-db = 1
+db = 0.5
 b = 32.1632
 b_cur = 0
 
@@ -33,9 +32,10 @@ while b_cur < wing.b/2:
         (0.3, 'down', 40000, 10),
         (0.5, 'up', 40000, 10),
         (0.5, 'down', 40000, 10),
-
         (0.4, 'up', 40000, 5),
         (0.4, 'down', 40000, 5),
+        (0.35, 'up', 40000, 7),
+        (0.35, 'down', 40000, 7),
     ]
 
     wing.plot(chord_position=b_cur)
@@ -43,7 +43,7 @@ while b_cur < wing.b/2:
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.6, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
                                 t_spar1=5, t_spar2=5,
                                 t_skin_up=5, t_skin_down=5, stiffeners=stiffeners,
-                                filepath="airfoils/NASA SC(2)-0414.dat", display_data=False)
+                                filepath="airfoils/NASA SC(2)-0414.dat", display_data=True)
 
     centroid_X, centroid_Y, I_xx, I_yy = cs.assembly_centroid_finder()
     b_pos.append(b_cur)
@@ -55,6 +55,7 @@ while b_cur < wing.b/2:
     cross_sections.append(cs)
 
     b_cur = b_cur + db
+
 
 plt.figure()
 
@@ -81,3 +82,5 @@ plt.legend()
 
 plt.grid(True)
 plt.show()
+
+print(I_XX)

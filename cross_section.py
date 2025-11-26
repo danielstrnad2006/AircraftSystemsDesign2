@@ -7,7 +7,6 @@ import matplotlib.patches as patches
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
 
-
 # ---------------------------
 # Airfoil Class
 # ---------------------------
@@ -238,6 +237,9 @@ class CrossSection:
                 I_xx = (comp.t * comp.L**3 * (np.sin(comp.angle + np.pi/2)**2)) / 12
                 I_yy = (comp.t * comp.L**3 * (np.cos(comp.angle + np.pi/2)**2)) / 12
 
+
+            I_xx_parallel_axis = 0
+            I_yy_parallel_axis = 0
             #Find the parallel axis term of the component
             if not isinstance(comp, Stiffener) or (isinstance(comp, Stiffener) and self.b_cur < comp.end_pos):
                 I_xx_parallel_axis = A * (comp.y_pos - self.assembly_centroid_y)**2
