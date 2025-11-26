@@ -35,12 +35,12 @@ class TorsionDeflection:
     # PLOTS
     def plot(self, N=200):
         y_span = np.linspace(0, 16.0816, N)
-        theta_span = np.array([self.theta(y) for y in y_span])
+        theta_span = np.array([self.theta(y)*180/np.pi for y in y_span])
 
         plt.figure()
         plt.plot(y_span, theta_span)
         plt.xlabel("y")
-        plt.ylabel("theta(y)")
+        plt.ylabel("theta(y) [deg]")
         plt.title("Deflection Distribution due to Torsion")
         plt.grid(True)
 

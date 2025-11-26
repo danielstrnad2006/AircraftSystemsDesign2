@@ -84,6 +84,7 @@ class HalfWing:
 
         self.Cl_0_total = float(0.192557) # to be continued, read from the xflr results directly
         self.CL_grad_total= float((0.962596-0.192557)/10)
+        self.x_centroid_distance = 0
 
         # Inertial forces:
         L = self.b / 2.0
@@ -134,16 +135,18 @@ class HalfWing:
         self.internal_shear = self.function_to_intrp1d(self.internal_shear)
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
-        #self.reaction_bending = self.function_to_intrp1d(self.reaction_bending)
+
         self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
-        self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.Lift(y)
-        '''
-        self.reaction_torsion = self.integrate_halfspan(self.internal_torsion)(self.b/2)
-        self.internal_torsion = lambda y: self.integrate_halfspan(self.internal_torsion)(y) - self.reaction_torsion
+
+        self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.aerodynamic_normal(y)
+        
+        self.reaction_torsion = self.integrate_halfspan(self.torsion_distribtuion)(self.b/2)
+        self.internal_torsion = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - self.reaction_torsion
         self.internal_torsion = self.function_to_intrp1d(self.internal_torsion)
-        '''
+        
+
 
     def torque_per_span(self,y):
         # different torques: torque due to lift, no torque due to wing weight, point torque due to engine thrust and weight, 
@@ -262,8 +265,8 @@ class HalfWing:
         ax1.set_ylabel("Internal Force [N]")
 
         ax2 = ax1.twinx()
-        l2, = ax2.plot(y, Mx_plot, color='k', label="internal bending moment distribution [Nm]")
-        ax2.set_ylabel("Internal Moment [N]")
+        l2, = ax2.plot(y, Mx_plot, color='k', label="internal bending moment distribution [Nm/m]")
+        ax2.set_ylabel("Internal Moment [Nm]")
         handles = [l1, l2]
         labels = [h.get_label() for h in handles]
         ax1.legend(handles, labels, loc='lower right')
@@ -274,9 +277,10 @@ class HalfWing:
         y = np.linspace(0, self.b/2, 120)
         My_plot = [self.internal_torsion(y_pos) for y_pos in y]
         fig, ax1 = plt.subplots()
-        l1, = ax1.plot(y, My_plot, label="Internal Shear Force [N]")
+        l1, = ax1.plot(y, My_plot, label="Internal Torsional Moment [Nm]")
         ax1.set_xlabel("y [m]")
-        ax1.set_ylabel("Internal Force [N]")
+        ax1.set_ylabel("Internal Torsion moment [Nm]")
+        ax1.legend()
 
         plt.show()
 
@@ -338,13 +342,17 @@ class HalfWing:
         complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]
         interpolated = sp.interpolate.interp1d(y_pos_lst, complicated_function_lst, kind='cubic', fill_value="extrapolate")
         return interpolated
+    
+    def set_torsion_params (self, db, x_centroid_arr_mm, J_arr_mm4):
+        y = np.arange(0, self.b / 2, db)
+        x_centroid_arr = [el*1e-3 for el in x_centroid_arr_mm]
+        self.x_centroid_distance = sp.interpolate.interp1d(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
+        J_arr = [el*1e-12 for el in x_centroid_arr_mm]
+        self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
 halfWing = HalfWing(params_intrpl)
 
-def set_torsion_params (self, db, x_centroid_arr, J_arr):
-    y = np.arange(0, self.b / 2, db)
-    self.x_centroid = np.interp(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
-    self.J = np.interp(y, J_arr, kind='cubic', fill_value="extrapolate")
+
 
 def goThroughAll():
     
