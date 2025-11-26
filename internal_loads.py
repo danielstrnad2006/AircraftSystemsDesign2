@@ -365,22 +365,24 @@ def goThroughAll():
         #halfWing.get_forces_plot()
         moment_lst.append(halfWing.reaction_bending)
         print()
+        print()
     print()
     print()
     print()
     print("The maximum bending moment of: ", max(moment_lst), "at case ", moment_lst.index(max(moment_lst)))
     print("This corresponds to the case")
+    crit_conds = []
     cond = conds[moment_lst.index(max(moment_lst))]
+    crit_conds.append(cond)
     print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
     print(cond)
     print()
     print("The maximum bending moment of: ", min(moment_lst), "at case ", moment_lst.index(min(moment_lst)))
     print("This corresponds to the case")
     cond = conds[moment_lst.index(min(moment_lst))]
+    crit_conds.append(cond)
     print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
     print(cond)
     print()
-
-
 
 #goThroughAll()
