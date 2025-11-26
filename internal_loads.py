@@ -12,7 +12,6 @@ span = 32.1632 #m
 y_pos_lst = np.genfromtxt('data/MainWing_a=0.00_v=10.00ms.txt', skip_header=40, skip_footer=footer_lines, usecols=0).tolist()
 
 chord_lst = np.genfromtxt('data/MainWing_a=0.00_v=10.00ms.txt', skip_header=40, skip_footer=footer_lines, usecols=1).tolist()
-print(chord_lst)
 chord_intrpl =sp.interpolate.interp1d(y_pos_lst, chord_lst, kind='linear', fill_value="extrapolate")
 
 
@@ -111,15 +110,15 @@ class HalfWing:
         self.wing_mass_distribution = lambda y: self.fuel_mass_distribution(y)+self.wing_mu(y)
 
 
-        self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y)/self.get_Cl(y)
+                                    
+        Ai_case = lambda y: self.get_Ai(y)
+
+        self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y, Ai=Ai_case(y))/self.get_Cl(y, Ai=Ai_case(y))
         self.x_cp_distance = lambda y: self.x_cp_ratio(y)*self.chord(y)
 
-        self.x_centroid_distance = lambda y: 1 #meter
-                                        
-        Ai_case = lambda y: self.get_Ai(y)
         self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y, Ai=Ai_case(y))   #up positive lift
-        self.Drag = lambda y: self.Lift(y)*np.sin(np.deg2rad(Ai_case(y)))
-        self.aerodynamic_normal= lambda y: np.cos(np.rad2deg(self.aoa))*self.Lift(y) + np.sin(np.rad2deg(self.aoa))*self.Drag(y)
+        self.Drag = lambda y: np.abs(self.Lift(y)*np.sin(np.deg2rad(Ai_case(y))))
+        self.aerodynamic_normal = lambda y: np.cos(np.deg2rad(self.aoa))*self.Lift(y) + np.sin(np.deg2rad(self.aoa))*self.Drag(y)
         # quick check: integrate to get total lift on the half wing
         self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
         print("Total lift is: ",2*self.total_lift_half,"[N]")
@@ -128,6 +127,7 @@ class HalfWing:
         cont_normal_force = lambda y: self.Lift(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
 
         self.reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
+
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
         self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_shear 
@@ -195,7 +195,7 @@ class HalfWing:
 
 
 
-    def _eval(self, intercept, grad, y, aoa_eff=0.0):
+    def _eval(self, intercept, grad, y, aoa_eff):
         # aoa: same units used when computing gradients (here degrees)
         return float(intercept(y)) + aoa_eff * float(grad(y))
 
@@ -215,18 +215,18 @@ class HalfWing:
 
 
     def get_coefficient_plots(self):
-        ax = np.linspace(0, self.b/2, 200)
-        Ai_plot = [self.Ai_0(y_pos) for y_pos in ax]
-        #Cl_plot = [self.Cl_0(y_pos) for y_pos in ax]
-        #Cm_plot = [self.Cm_0(y_pos) for y_pos in ax]
-        #x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
+        ax = np.linspace(0, self.b/2, 100)
+        Ai_plot = [self.get_Ai(y_pos) for y_pos in ax]
+        Cl_plot = [self.get_Cl(y_pos) for y_pos in ax]
+        Cm_plot = [self.get_Cm(y_pos) for y_pos in ax]
+        x_cp_ratio_plot = [self.x_cp_ratio(y_pos) for y_pos in ax]
         x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in ax ]
 
         #plt.plot(ax, x_cp_plot, label = "centre of pressure position [m] from LE")
         plt.plot(ax, Ai_plot, label = "induced angle of attack at zero aoa")
-        #plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
-        #plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
-        #plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
+        plt.plot(ax, Cl_plot, label = "lift coefficient distribution at zero aoa")
+        plt.plot(ax, Cm_plot, label="moment coefficient distribution at zero aoa")
+        plt.plot(ax, x_cp_ratio_plot, label="position of c.p. as ratio of chord")
         plt.legend()
         plt.show()
     
@@ -236,14 +236,18 @@ class HalfWing:
         y = np.linspace(0, self.b/2, 120)
         dry_wing_plot = [self.g*self.g_loading*self.wing_mu(y_pos) for y_pos in y]
         fuel_plot = [self.g*self.g_loading*self.fuel_mass_distribution(y_pos) for y_pos in y]
+        aero_plot = [self.aerodynamic_normal(y_pos) for y_pos in y]
         lift_plot = [self.Lift(y_pos) for y_pos in y]
+        drag_plot = [self.Drag(y_pos) for y_pos in y]
         fig, ax1 = plt.subplots()
         l1, = ax1.plot(y, dry_wing_plot, label="dry wing structure weight distribution [N/m]")
         l2, = ax1.plot(y, fuel_plot, label="fuel weight distribution [N/m]")
-        l3, = ax1.plot(y, lift_plot, label="Lift distribution [N/m]")
+        l3, = ax1.plot(y, aero_plot, label="aerodynamic normal force distribution [N/m]")
+        l4, = ax1.plot(y, lift_plot, label="lift force distribution [N/m]")
+        l5, = ax1.plot(y, drag_plot, label="drag force distribution [N/m]")
         ax1.set_xlabel("y [m]")
         ax1.set_ylabel("force per unit span [N/m]")
-        handles = [l1, l2, l3]
+        handles = [l1, l2, l3, l4, l5]
         labels = [h.get_label() for h in handles]
         ax1.legend(handles, labels, loc='lower right')
 
@@ -289,8 +293,9 @@ class HalfWing:
     def set_conditions(self, load_factor, weight, v_EAS, rho, fuel_percentage):
         self.fuel_percentage = fuel_percentage
         self.velocity = v_EAS*np.sqrt(1.225/rho) #m s^-1, convert EAS to TAS
+        self.g_loading = load_factor
 
-        self.CL_des = (-weight * self.g * load_factor * 2) / (rho * self.velocity**2 * self.S)
+        self.CL_des = (-weight * self.g * self.g_loading * 2) / (rho * self.velocity**2 * self.S)
         print("target design lift coefficient is: ", self.CL_des)
         self.aoa = (self.CL_des-self.Cl_0_total)/self.CL_grad_total #deg
         print("target angle of attack is: ", self.aoa)
@@ -329,9 +334,10 @@ halfWing = HalfWing(params_intrpl)
 
 
 
-def findCritical():
+def goThroughAll():
     
-    #set conditions for loadcase 1: MTOW=103 544 kilograms, 
+    #set conditions for loadcase 1: 
+    # MTOW=103 544 kilograms, 
     # ZFW = 62 767.459 kilograms
     # OEW = 43 807.4567 kilograms
     conds = [[2.5, 103544, 138.016, 1.225, 100],
@@ -355,7 +361,26 @@ def findCritical():
         print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
         print("The Reaction Shear Force is:", halfWing.reaction_shear)
         print("The Reaction Bending Moment is:", halfWing.reaction_bending)
+        #halfWing.get_coefficient_plots()
+        #halfWing.get_forces_plot()
         moment_lst.append(halfWing.reaction_bending)
         print()
-    print(max(moment_lst))
-#findCritical()
+    print()
+    print()
+    print()
+    print("The maximum bending moment of: ", max(moment_lst), "at case ", moment_lst.index(max(moment_lst)))
+    print("This corresponds to the case")
+    cond = conds[moment_lst.index(max(moment_lst))]
+    print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+    print(cond)
+    print()
+    print("The maximum bending moment of: ", min(moment_lst), "at case ", moment_lst.index(min(moment_lst)))
+    print("This corresponds to the case")
+    cond = conds[moment_lst.index(min(moment_lst))]
+    print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+    print(cond)
+    print()
+
+
+
+#goThroughAll()
