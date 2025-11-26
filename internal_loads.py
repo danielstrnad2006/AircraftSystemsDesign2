@@ -138,6 +138,11 @@ class HalfWing:
         self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
+        self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.Lift(y)
+        self.reaction_torsion = self.integrate_halfspan(self.internal_torsion)(self.b/2)
+        self.internal_torsion = lambda y: self.integrate_halfspan(self.internal_torsion)(y) - self.reaction_torsion
+        self.internal_torsion = self.function_to_intrp1d(self.internal_torque)
+
 
     def torque_per_span(self,y):
         # different torques: torque due to lift, no torque due to wing weight, point torque due to engine thrust and weight, 
@@ -146,6 +151,7 @@ class HalfWing:
 
         x_pos, z_pos = centroid_position(y)
         return (self.x_cp_distance(y) - x_pos) * self.Lift(y)
+    
     def internal_torque(self, bound):
         torque_lift, err = sp.integrate.quad(lambda y: self.torque_per_span(y), 0, bound)
         if bound >= self.y_engine:
@@ -322,7 +328,10 @@ class HalfWing:
 
 halfWing = HalfWing(params_intrpl)
 
-
+def set_torsion_params (self, db, x_centroid_arr, J_arr):
+    y = np.arange(0, self.b / 2, db)
+    self.x_centroid = np.interp(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
+    self.J = np.interp(y, J_arr, kind='cubic', fill_value="extrapolate")
 
 def goThroughAll():
     
