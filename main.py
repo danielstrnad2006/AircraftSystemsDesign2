@@ -20,7 +20,8 @@ crit_conds = [[2.5, 103544, 163, 1.225, 100],[-1, 103544, 87.29, 1.225, 100]]
 for cond in crit_conds:
 
     internal_properties=internal_loads.halfWing
-    internal_properties.set_conditions(2.5, 103544, 120, 1.225, 100)
+    print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+    internal_properties.set_conditions(cond)
     internal_properties.get_coefficient_plots()
     internal_properties.get_forces_plot()
     internal_properties.get_internal_plot()
