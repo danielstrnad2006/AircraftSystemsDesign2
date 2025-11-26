@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 
 # ---------------------------
@@ -67,7 +68,8 @@ class Stiffener(Component):
 
     
 class CrossSection:
-    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners, filepath, display_data=False, display_plot=False):
+    def __init__(self, xc_spar1, xc_spar2, chord, b_cur, t_spar1, t_spar2, t_skin_up, t_skin_down, stiffeners,
+                 filepath, planform, display_data=False, display_plot=False):
         self.filepath = filepath
         self.xc_spar1 = xc_spar1
         self.xc_spar2 = xc_spar2
@@ -97,6 +99,8 @@ class CrossSection:
 
         self.t_skin_up = t_skin_up
         self.t_skin_down = t_skin_down
+
+        self.planform = planform
 
     def _import_airfoil(self, filepath):
         x, y = [], []
@@ -134,7 +138,10 @@ class CrossSection:
             y_lower = np.flip(y_lower)
         
         return x, y, x_upper, y_upper, x_lower, y_lower
-    
+
+    def new_planform(self, planform):
+        self.planform = planform
+
     def get_thickness_at(self, x_c):
         y_u = np.interp(x_c, self.x_upper, self.y_upper)
         y_l = np.interp(x_c, self.x_lower, self.y_lower)
@@ -195,10 +202,11 @@ class CrossSection:
         plt.plot(self.assembly_centroid_x, self.assembly_centroid_y, 'o', markersize=10)
 
         #Add spanwise location to the plot
+        # Add spanwise location to the plot using the planform figure
         try:
             spanwise_img = plt.imread("temp/planform.png")
             scaled_img = OffsetImage(spanwise_img, zoom=0.2)
-            ab = AnnotationBbox(scaled_img, (1, 0), xycoords='axes fraction', box_alignment=(1.1, -0.1))
+            ab = AnnotationBbox(scaled_img, (1, 0), ...)
             plt.gca().add_artist(ab)
         except FileNotFoundError:
             print("ERROR: Planform image not found")
@@ -207,7 +215,7 @@ class CrossSection:
         
         if not os.path.exists('Plots'):
             os.mkdir('Plots')
-        plt.savefig(f'Plots/cross_section_{self.b_cur:0.2f}.png', dpi=300)    
+        plt.savefig(f'Plots/cross_section_{self.b_cur:0.2f}.webp', dpi=300)
 
         if self.display_plot:    
             plt.show()

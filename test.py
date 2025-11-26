@@ -38,13 +38,14 @@ while b_cur < wing.b/2:
         (0.4, 'down', 40000, 5),
     ]
 
-    wing.plot(chord_position=b_cur)
+    img = wing.plot(chord_position=b_cur)
 
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.6, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
                                 t_spar1=5, t_spar2=5,
                                 t_skin_up=5, t_skin_down=5, stiffeners=stiffeners,
-                                filepath="airfoils/NASA SC(2)-0414.dat", display_data=False)
+                                filepath="airfoils/NASA SC(2)-0414.dat", display_plot=True, planform=img)
 
+    cs.new_planform(img)
     centroid_X, centroid_Y, I_xx, I_yy = cs.assembly_centroid_finder()
     b_pos.append(b_cur)
     CENTROID_X.append(centroid_X)
@@ -55,6 +56,8 @@ while b_cur < wing.b/2:
     cross_sections.append(cs)
 
     b_cur = b_cur + db
+
+os.remove("temp/base_planform.pickle")
 
 plt.figure()
 
