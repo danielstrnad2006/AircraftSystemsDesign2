@@ -255,6 +255,18 @@ class CrossSection:
         print(f"Ixx_sum: {I_xx_sum:0.2f} \tIyy_sum: {I_yy_sum:0.2f}")
         return I_xx_sum, I_yy_sum
     
+    def find_polar_inertia(self, components):
+        A = (self.x_spar2 - self.x_spar1) * (self.h_spar2 + self.h_spar1)
+        ds_over_t = 0
+
+        for comp in components:
+            if not isinstance(comp, Stiffener):
+                ds_over_t += comp.L / comp.t
+            else:
+                continue
+
+        J = (4 * A**2)/ds_over_t
+        return J
     
     def assembly_centroid_finder(self):
         # Length and angle of the upper skin
@@ -307,6 +319,8 @@ class CrossSection:
         components.extend(stiffener_objects)
 
         self.find_centroid(components)
+
         I_xx_sum, I_yy_sum = self.find_AMOI(components)
-        return self.assembly_centroid_x, self.assembly_centroid_y, I_xx_sum, I_yy_sum
+        J_p = self.find_polar_inertia(components)
+        return self.assembly_centroid_x, self.assembly_centroid_y, I_xx_sum, I_yy_sum, J_p
 
