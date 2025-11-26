@@ -16,9 +16,13 @@ from planform import *
 db = 0.5
 b = 32.1632
 
+
 """
 internal_properties=internal_loads.halfWing
 internal_properties.set_conditions(2.5, 103544, 120, 1.225, 100)
+internal_properties.get_coefficient_plots()
+internal_properties.get_forces_plot()
+internal_properties.get_internal_plot()
 internal_properties.torque_plot()
 twist_plot(internal_properties)
 internal_properties.get_internal_plot()
