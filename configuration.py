@@ -7,7 +7,7 @@ from cross_section import *
 from planform import *
 
 
-db = 0.1
+db = 0.5
 b = 32.1632
 b_cur = 0
 
