@@ -8,3 +8,4 @@ internal_properties=internal_loads.halfWing
 internal_properties.set_conditions(2.5, 103544, 120, 1.225, 100)
 internal_properties.get_internal_plot()
 moment_distribution = internal_properties.internal_bending
+
