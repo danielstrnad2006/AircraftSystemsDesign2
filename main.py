@@ -14,7 +14,7 @@ from cross_section import *
 from planform import *
 
 db = 0.5
-b=32.1632
+b = 32.1632
 
 internal_properties=internal_loads.halfWing
 internal_properties.set_conditions(2.5, 103544, 120, 1.225, 100)
