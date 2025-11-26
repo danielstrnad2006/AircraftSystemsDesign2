@@ -358,4 +358,4 @@ def findCritical():
         moment_lst.append(halfWing.reaction_bending)
         print()
     print(max(moment_lst))
-findCritical()
+#findCritical()

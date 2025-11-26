@@ -7,7 +7,6 @@ import matplotlib.patches as patches
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
 
-
 # ---------------------------
 # Airfoil Class
 # ---------------------------

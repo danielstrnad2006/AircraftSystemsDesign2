@@ -34,6 +34,8 @@ while b_cur < wing.b/2:
         (0.5, 'down', 40000, 10),
         (0.4, 'up', 40000, 5),
         (0.4, 'down', 40000, 5),
+        (0.35, 'up', 40000, 7),
+        (0.35, 'down', 40000, 7),
     ]
 
     wing.plot(chord_position=b_cur)
@@ -53,6 +55,7 @@ while b_cur < wing.b/2:
     cross_sections.append(cs)
 
     b_cur = b_cur + db
+
 
 plt.figure()
 
@@ -79,3 +82,5 @@ plt.legend()
 
 plt.grid(True)
 plt.show()
+
+print(I_XX)
