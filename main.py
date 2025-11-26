@@ -14,5 +14,5 @@ internal_properties.get_internal_plot()
 moment_distribution = internal_properties.internal_bending
 
 #PLOT BEAM DEFLECTION
-#beam = BeamDeflection()
-#beam.plot()
+beam = BeamDeflection()
+beam.plot()

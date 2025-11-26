@@ -104,7 +104,7 @@ class HalfWing:
            # cs.right_wall_length / cs.right_wall_t)
         Area= 1#cs.Area
         J = 4 * (Area ** 2) / integral
-        return 10  #this still has to be changed so it outputs the correct polar moment of inertia at the correct position
+        return 0.01  #this still has to be changed so it outputs the correct polar moment of inertia at the correct position
 
     def compute_internal_forces(self):
         self.fuel_mass_distribution = lambda y:(self.fuel_percentage/100)*self.fuel_volume_distribution(y)*self.kerosene_density
