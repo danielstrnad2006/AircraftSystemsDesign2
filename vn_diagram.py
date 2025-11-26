@@ -5,7 +5,7 @@ from pygments.styles.dracula import purple
 
 class VnDiagram:
     def __init__(self, weight, label, color, g=9.81, rho=1.225, S=149.9,
-                 CL_max=1.452, CL_max_takeoff=2.547,CL_max_landing=2.575, V_C=154, V_D=163):
+                 CL_max=1.452, CL_max_takeoff=2.547, CL_max_landing=2.575, V_C=154, V_D=163):
         self.W = weight              # weight in lbs
         self.label = label
         self.color = color
