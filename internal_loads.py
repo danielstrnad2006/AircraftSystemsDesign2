@@ -63,7 +63,7 @@ class HalfWing:
 
         self.S = 149.9 #m
         self.b = 32.1632 #m^2
-
+        self.G=28*10**9 #change this to the G value of aluminium we are using
         
         self.y_engine = 7.03893 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
@@ -95,15 +95,15 @@ class HalfWing:
         self.wing_mu = lambda y: self.massConsts * (float(self.chord(y))**2)
         self.fuel_volume_distribution = lambda y: ((self.chord(y)**2 * self.johannes_fuel_constant) if y<(self.b/2)*0.65  else 0.0)
         
-    def polar_moment_intertia(crosssection,y):
-        cs = crosssection.cross_section_at(y)     # get geometry at this span station
-        integral = (
-            cs.topspar_length    / cs.topspar_t +
-            cs.bottomspar_length / cs.bottomspar_t +
-            cs.left_wall_length  / cs.left_wall_t +
-            cs.right_wall_length / cs.right_wall_t
-        )
-        J = 4 * (cs.Area ** 2) / integral
+    def polar_moment_inertia(self, y): #this code still has to be written properly
+        
+        cs = 1   # get geometry at this span station
+        integral =1# ( cs.topspar_length    / cs.topspar_t +
+          #  cs.bottomspar_length / cs.bottomspar_t +
+          #  cs.left_wall_length  / cs.left_wall_t +
+           # cs.right_wall_length / cs.right_wall_t)
+        Area= 1#cs.Area
+        J = 4 * (Area ** 2) / integral
         return 10  #this still has to be changed so it outputs the correct polar moment of inertia at the correct position
 
     def compute_internal_forces(self):
