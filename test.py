@@ -7,7 +7,7 @@ from cross_section import *
 from planform import *
 
 
-db = 0.5
+db = 0.1
 b = 32.1632
 b_cur = 0
 
@@ -32,10 +32,6 @@ while b_cur < wing.b/2:
         (0.3, 'down', 40000, 10),
         (0.5, 'up', 40000, 10),
         (0.5, 'down', 40000, 10),
-        (0.4, 'up', 40000, 5),
-        (0.4, 'down', 40000, 5),
-        (0.35, 'up', 40000, 7),
-        (0.35, 'down', 40000, 7),
     ]
 
     wing.plot(chord_position=b_cur)
