@@ -34,6 +34,7 @@ for cond in crit_conds:
     internal_properties.get_coefficient_plots()
     internal_properties.get_forces_plot()
     internal_properties.get_internal_plot()
+    internal_properties.get_debugging_torsion_plot()
     internal_properties.get_internal_torsion_plot()
     #internal_properties.torque_plot()
 
@@ -52,6 +53,7 @@ for cond in crit_conds:
     #PLOT BEAM TWIST
     beam_twist = TorsionDeflection(b, db, torsion_distrib=torsion_distribution, J_distrib=internal_properties.J)
     beam_twist.plot()
+
 
     
 

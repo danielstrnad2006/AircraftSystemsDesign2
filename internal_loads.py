@@ -284,6 +284,36 @@ class HalfWing:
 
         plt.show()
 
+    def get_debugging_torsion_plot(self):
+        y = np.linspace(0, self.b/2, 120)
+        x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in y]
+        x_centroid_plot = [self.x_centroid_distance (y_pos) for y_pos in y]
+        fig, ax1 = plt.subplots()
+        l1, = ax1.plot(y, x_cp_plot, label="Distance of centre of pressure to the LE [m]")
+        l2, = ax1.plot(y, x_centroid_plot, label="Distance of centroid to the LE [m]")
+        ax1.set_xlabel("y [m]")
+        ax1.set_ylabel("Distance from the LE [m]")
+
+        ax2 = ax1.twinx()
+        aero_plot = [self.aerodynamic_normal(y_pos) for y_pos in y]
+        l3, = ax2.plot(y, aero_plot, color='k', label="aerodynamic force distribution [N/m]")
+        ax2.set_ylabel("Force per unit span [N/m]")
+        handles = [l1, l2, l3]
+        labels = [h.get_label() for h in handles]
+        ax1.legend(handles, labels, loc='lower right')
+
+        plt.show()
+
+        J_plot = [self.J(y_pos) for y_pos in y]
+        fig, ax1 = plt.subplots()
+        l1, = ax1.plot(y, J_plot, label="torsion constant [m^4]")
+        ax1.set_xlabel("y [m]")
+        ax1.set_ylabel("torsion constant[m^4]")
+        ax1.legend()
+
+        plt.show()
+
+
     def update_fuel(self, percentage):
         self.fuel_percentage = percentage
         self.compute_internal_forces()
@@ -347,7 +377,7 @@ class HalfWing:
         y = np.arange(0, self.b / 2, db)
         x_centroid_arr = [el*1e-3 for el in x_centroid_arr_mm]
         self.x_centroid_distance = sp.interpolate.interp1d(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
-        J_arr = [el*1e-12 for el in x_centroid_arr_mm]
+        J_arr = [el*1e-12*1e7 for el in x_centroid_arr_mm]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
 halfWing = HalfWing(params_intrpl)
