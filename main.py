@@ -73,7 +73,20 @@ for cond in crit_conds:
 
 
 if input("Is the final cross section chosen and do you want to proceed to verify deflection at all loading conditions? (y)")=="y":
-    crit_conds = [[2.5, 103544, 163, 1.225, 100],[-1, 103544, 87.29, 1.225, 100]]
+    crit_conds = [[2.5, 103544, 138.016, 1.225, 100],
+             [2.5, 103544, 163, 1.225, 100],  
+             [-1, 103544, 87.29, 1.225, 100], 
+             [-1, 103544, 154, 1.225, 100],
+             
+             [2.5, 43807, 89.772, 1.225, 0],
+             [2.5, 43807, 163, 1.225, 0],  
+             [-1, 43807, 56.777, 1.225, 0], 
+             [-1, 43807, 154, 1.225, 0],
+
+             [2.5, 62767, 107.46, 1.225, 0],
+             [2.5, 62767, 163, 1.225, 0],  
+             [-1, 62767, 67.96, 1.225, 0], 
+             [-1, 62767, 154, 1.225, 0]]
     for cond in crit_conds:
         print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
         internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])

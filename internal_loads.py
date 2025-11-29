@@ -117,7 +117,7 @@ class HalfWing:
         self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y, Ai=Ai_case(y))/self.get_Cl(y, Ai=Ai_case(y))
         self.x_cp_distance = lambda y: self.x_cp_ratio(y)*self.chord(y)
 
-        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y, Ai=Ai_case(y))   #up positive lift
+        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y)   #up positive lift
         self.Drag = lambda y: np.abs(self.Lift(y)*np.sin(np.deg2rad(Ai_case(y))))
         self.aerodynamic_normal = lambda y: np.cos(np.deg2rad(self.aoa))*self.Lift(y) + np.sin(np.deg2rad(self.aoa))*self.Drag(y)
         # quick check: integrate to get total lift on the half wing
@@ -266,17 +266,30 @@ class HalfWing:
         y = np.linspace(0, self.b/2, 120)
         Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
         Mx_plot = [self.internal_bending(y_pos) for y_pos in y]
-        fig, ax1 = plt.subplots()
-        l1, = ax1.plot(y, Vz_plot, label="Internal Shear Force [N]")
-        ax1.set_xlabel("y [m]")
-        ax1.set_ylabel("Internal Force [N]")
-
-        ax2 = ax1.twinx()
-        l2, = ax2.plot(y, Mx_plot, color='k', label="internal bending moment distribution [Nm/m]")
-        ax2.set_ylabel("Internal Moment [Nm]")
-        handles = [l1, l2]
-        labels = [h.get_label() for h in handles]
-        ax1.legend(handles, labels, loc='lower right')
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
+        
+        # Top subplot: Shear Force
+        ax1.plot(y, Vz_plot, linewidth=2.5, label="Internal Shear Force [N]", color='#1f77b4')
+        ax1.set_ylabel("Internal Shear Force [N]", fontsize=12, fontweight='bold', color='black')
+        ax1.tick_params(axis='y', labelsize=11)
+        ax1.tick_params(axis='x', labelsize=11)
+        ax1.grid(True, alpha=0.3, linestyle='--')
+        ax1.axhline(y=0, color='k', linewidth=0.8)
+        ax1.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax1.set_xlim(0, self.b/2)
+        
+        # Bottom subplot: Bending Moment
+        ax2.plot(y, Mx_plot, linewidth=2.5, color='#ff7f0e', label="Internal Bending Moment [Nm]")
+        ax2.set_xlabel("Spanwise Position y [m]", fontsize=12, fontweight='bold')
+        ax2.set_ylabel("Internal Bending Moment [Nm]", fontsize=12, fontweight='bold', color='black')
+        ax2.tick_params(axis='y', labelsize=11)
+        ax2.tick_params(axis='x', labelsize=11)
+        ax2.grid(True, alpha=0.3, linestyle='--')
+        ax2.axhline(y=0, color='k', linewidth=0.8)
+        ax2.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax2.set_xlim(0, self.b/2)
+        
+        plt.tight_layout()
 
         plt.show()
 
@@ -284,13 +297,16 @@ class HalfWing:
         y = np.linspace(0, self.b/2, 120)
         My_plot_noT = [self.internal_torsion_noT(y_pos) for y_pos in y]
         My_plot_fullT = [self.internal_torsion_fullT(y_pos) for y_pos in y]
-        fig, ax1 = plt.subplots()
-        ax1.plot(y, My_plot_noT, label="Internal Torsional Moment at zero throttle [Nm]")
-        ax1.plot(y, My_plot_fullT, label="Internal Torsional Moment at full throttle [Nm]")
-        ax1.set_xlabel("y [m]")
-        ax1.set_ylabel("Internal Torsion moment [Nm]")
-        ax1.legend()
-
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        ax1.plot(y, My_plot_noT, linewidth=2.5, label="Internal Torsional Moment at zero throttle [Nm]", color='#1f77b4')
+        ax1.plot(y, My_plot_fullT, linewidth=2.5, label="Internal Torsional Moment at full throttle [Nm]", color='#ff7f0e')
+        ax1.set_xlabel("Spanwise Position y [m]", fontsize=12, fontweight='bold')
+        ax1.set_ylabel("Internal Torsion Moment M_y [Nm]", fontsize=12, fontweight='bold')
+        ax1.tick_params(labelsize=11)
+        ax1.axhline(y=0, color='k', linewidth=0.8)
+        ax1.legend(fontsize=11, loc='best', framealpha=0.9)
+        ax1.grid(True, alpha=0.3, linestyle='--')
+        plt.tight_layout()
         plt.show()
 
     def get_debugging_torsion_plot(self):
@@ -332,13 +348,6 @@ class HalfWing:
         self.compute_internal_forces()
 
 
-    # def set_conditions(self, velocity, CL_des, rho):
-    #     self.velocity = velocity #m s^-1
-    #
-    #     self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
-    #     print("target angle of attack is: ", self.aoa)
-    #     self.rho = rho #kg m^-3
-    #     self.compute_internal_forces()
 
 
 

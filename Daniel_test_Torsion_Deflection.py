@@ -45,6 +45,8 @@ def plotTwists(theta_fullT, theta_noT, N=200):
     plt.ylabel("theta(y) [deg]")
     plt.title("Deflection Distribution due to Torsion")
     plt.grid(True)
+    plt.axhline(y=0, color='k', linewidth=0.8)
+    plt.xlim(0)
     plt.legend()
 
     plt.show()
