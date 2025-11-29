@@ -12,7 +12,7 @@ class TorsionDeflection:
         self.I_XX = 0
         self.torsion_distribution = torsion_distrib
         self.J_distribution = J_distrib
-        self.G = 28000000
+        self.G = 28000000000
 
     def dtheta_dy (self, y):
         integrand = self.torsion_distribution(y)/(self.G*self.J_distribution(y))
@@ -33,15 +33,18 @@ class TorsionDeflection:
         return max_theta, max_y
 
     # PLOTS
-    def plot(self, N=200):
-        y_span = np.linspace(0, 16.0816, N)
-        theta_span = np.array([self.theta(y)*180/np.pi for y in y_span])
+def plotTwists(theta_fullT, theta_noT, N=200):
+    y_span = np.linspace(0, 16.0816, N)
+    theta_span_fullT = np.array([theta_fullT(y)*180/np.pi for y in y_span])
+    theta_span_noT = np.array([theta_noT(y)*180/np.pi for y in y_span])
 
-        plt.figure()
-        plt.plot(y_span, theta_span)
-        plt.xlabel("y")
-        plt.ylabel("theta(y) [deg]")
-        plt.title("Deflection Distribution due to Torsion")
-        plt.grid(True)
+    plt.figure()
+    plt.plot(y_span, theta_span_fullT, label = "Wing twist with full throttle")
+    plt.plot(y_span, theta_span_noT, label = "Wing twist with zero throttle")
+    plt.xlabel("y[m]")
+    plt.ylabel("theta(y) [deg]")
+    plt.title("Deflection Distribution due to Torsion")
+    plt.grid(True)
+    plt.legend()
 
-        plt.show()
+    plt.show()

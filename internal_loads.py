@@ -66,10 +66,10 @@ class HalfWing:
         
         self.y_engine = 7.03893 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
-        self.engine_thrust=363800/2 #N check this value
-        self.y_engine = 7.04 #m # to be determined
+        self.engine_TO_thrust= 185500 #N (https://stands.aero/blog/aircraft-engines/pw2000-overview-and-specifications/)
         self.engine_z_pos=-1.9939/2-0.14*self.chord(self.y_engine) #from centerline 
         self.engine_x_pos=0 #from centerline leading edge, so we assume the center of mass of the engine coincides with the leading edge
+        self.throttle_percentage =100
 
         self.velocity = v_ref #m s^-1
         self.aoa = aoa_ref #deg
@@ -141,10 +141,17 @@ class HalfWing:
 
 
         self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.aerodynamic_normal(y)
+
+        self.thrust = self.engine_TO_thrust*(self.rho/1.225)*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
+        #print(self.thrust)
+        #print(self.thrust/self.engine_TO_thrust*100)
         
         self.reaction_torsion = self.integrate_halfspan(self.torsion_distribtuion)(self.b/2)
-        self.internal_torsion = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - self.reaction_torsion
-        self.internal_torsion = self.function_to_intrp1d(self.internal_torsion)
+        self.internal_torsion_noT = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - (self.x_centroid_distance(self.y_engine)*self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_torsion
+        self.internal_torsion_fullT = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - (self.x_centroid_distance(self.y_engine)*self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) + ((self.throttle_percentage/100)*self.thrust*self.engine_z_pos if y < self.y_engine else 0)- self.reaction_torsion
+        
+        self.internal_torsion_noT = self.function_to_intrp1d(self.internal_torsion_noT)
+        self.internal_torsion_fullT = self.function_to_intrp1d(self.internal_torsion_fullT)
         
 
 
@@ -166,7 +173,7 @@ class HalfWing:
                 self.engine_z_pos - z_pos_e
             ])
             engine_force = np.array([
-                -self.engine_thrust,
+                -self.engine_TO_thrust,
                 0,
                 self.m_engine_and_nacelle * self.g
             ])
@@ -275,9 +282,11 @@ class HalfWing:
 
     def get_internal_torsion_plot(self):
         y = np.linspace(0, self.b/2, 120)
-        My_plot = [self.internal_torsion(y_pos) for y_pos in y]
+        My_plot_noT = [self.internal_torsion_noT(y_pos) for y_pos in y]
+        My_plot_fullT = [self.internal_torsion_fullT(y_pos) for y_pos in y]
         fig, ax1 = plt.subplots()
-        l1, = ax1.plot(y, My_plot, label="Internal Torsional Moment [Nm]")
+        ax1.plot(y, My_plot_noT, label="Internal Torsional Moment at zero throttle [Nm]")
+        ax1.plot(y, My_plot_fullT, label="Internal Torsional Moment at full throttle [Nm]")
         ax1.set_xlabel("y [m]")
         ax1.set_ylabel("Internal Torsion moment [Nm]")
         ax1.legend()
@@ -404,6 +413,8 @@ def goThroughAll():
              [2.5, 62767, 163, 1.225, 0],  
              [-1, 62767, 67.96, 1.225, 0], 
              [-1, 62767, 154, 1.225, 0]]
+    
+
     moment_lst = []
     for cond in conds: 
         halfWing.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])

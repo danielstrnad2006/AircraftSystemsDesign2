@@ -5,7 +5,7 @@
 import internal_loads
 from Wing_twist_deflection import  twist_plot, wing_tip_twist
 from Bending_Deflection import BeamDeflection
-from Daniel_test_Torsion_Deflection import TorsionDeflection
+from Daniel_test_Torsion_Deflection import TorsionDeflection, plotTwists
 
 import math
 import numpy as np
@@ -14,6 +14,7 @@ from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 from cross_section import * 
 from planform import *
+import json
 
 db = 0.5
 b = 32.1632
@@ -21,15 +22,22 @@ b = 32.1632
 internal_properties=internal_loads.halfWing
 crit_conds = [[2.5, 103544, 163, 1.225, 100],[-1, 103544, 87.29, 1.225, 100]]
 
-I_XX = [np.float64(33480308035.556774), np.float64(31856908251.130173), np.float64(30279526734.80252), np.float64(28747742163.1427), np.float64(27261133202.22146), np.float64(25819278507.381264), np.float64(24421756722.999924), np.float64(23068146482.247917), np.float64(21758026406.839333), np.float64(20490975106.77606), np.float64(19266571180.085144), np.float64(18084393212.549038), np.float64(16944019777.428473), np.float64(15845029435.177847), np.float64(14787000733.152805), np.float64(13769512205.30965), np.float64(12792142371.896643), np.float64(11854469739.136549), np.float64(10956072798.900415), np.float64(10096530028.372175), np.float64(1053064031.2885389), np.float64(930135986.3936577), np.float64(817167263.0431123), np.float64(713737138.6943815), np.float64(619424890.8049406), np.float64(533809796.8322648), np.float64(456471134.23382986), np.float64(386988180.4671123), np.float64(324940212.9895887), np.float64(269906509.25873303), np.float64(221466346.73202258), np.float64(179199002.8669331), np.float64(142683755.12093985)]
-CENTROID_X = [np.float64(2910.365816629366), np.float64(2845.284184294819), np.float64(2780.2000091008904), np.float64(2715.1132578730003), np.float64(2650.02389685698), np.float64(2584.9318917063597), np.float64(2519.8372074693193), np.float64(2454.739808575291), np.float64(2389.6396588212087), np.float64(2324.536721357386), np.float64(2259.4309586730137), np.float64(2194.3223325812705), np.float64(2129.2108042040186), np.float64(2064.0963339560954), np.float64(1998.9788815291624), np.float64(1933.8584058751196), np.float64(1868.7348651890532), np.float64(1803.6082168917148), np.float64(1738.478417611508), np.float64(1673.345423165974), np.float64(1598.4458874721213), np.float64(1533.657895028458), np.float64(1468.8699025847939), np.float64(1404.0819101411303), np.float64(1339.293917697467), np.float64(1274.5059252538033), np.float64(1209.7179328101392), np.float64(1144.9299403664754), np.float64(1080.141947922812), np.float64(1015.3539554791481), np.float64(950.5659630354845), np.float64(885.7779705918211), np.float64(820.9899781481573)]
-J_P = [np.float64(69483201639.66885), np.float64(64920647095.20532), np.float64(60562326996.2465), np.float64(56403564783.54618), np.float64(52439683897.85787), np.float64(48666007779.93528), np.float64(45077859870.531944), np.float64(41670563610.40155), np.float64(38439442440.297714), np.float64(35379819800.97405), np.float64(32487019133.18418), np.float64(29756363877.681732), np.float64(27183177475.220356), np.float64(24762783366.553623), np.float64(22490504992.43521), np.float64(20361665793.618725), np.float64(18371589210.857788), np.float64(16515598684.906036), np.float64(14789017656.51707), np.float64(13187169566.444551), np.float64(11705377855.442066), np.float64(10338965964.263279), np.float64(9083257333.661774), np.float64(7933575404.391199), np.float64(6885243617.205185), np.float64(5933585412.857342), np.float64(5073924232.101298), np.float64(4301583515.690682), np.float64(3611886704.3791294), np.float64(3000157238.920244), np.float64(2461718560.0676656), np.float64(1991894108.5750177), np.float64(1586007325.1959202)]
-internal_properties.set_torsion_params(db, CENTROID_X, J_P)
+#I_XX = [np.float64(33480308035.556774), np.float64(31856908251.130173), np.float64(30279526734.80252), np.float64(28747742163.1427), np.float64(27261133202.22146), np.float64(25819278507.381264), np.float64(24421756722.999924), np.float64(23068146482.247917), np.float64(21758026406.839333), np.float64(20490975106.77606), np.float64(19266571180.085144), np.float64(18084393212.549038), np.float64(16944019777.428473), np.float64(15845029435.177847), np.float64(14787000733.152805), np.float64(13769512205.30965), np.float64(12792142371.896643), np.float64(11854469739.136549), np.float64(10956072798.900415), np.float64(10096530028.372175), np.float64(1053064031.2885389), np.float64(930135986.3936577), np.float64(817167263.0431123), np.float64(713737138.6943815), np.float64(619424890.8049406), np.float64(533809796.8322648), np.float64(456471134.23382986), np.float64(386988180.4671123), np.float64(324940212.9895887), np.float64(269906509.25873303), np.float64(221466346.73202258), np.float64(179199002.8669331), np.float64(142683755.12093985)]
+#CENTROID_X = [np.float64(2910.365816629366), np.float64(2845.284184294819), np.float64(2780.2000091008904), np.float64(2715.1132578730003), np.float64(2650.02389685698), np.float64(2584.9318917063597), np.float64(2519.8372074693193), np.float64(2454.739808575291), np.float64(2389.6396588212087), np.float64(2324.536721357386), np.float64(2259.4309586730137), np.float64(2194.3223325812705), np.float64(2129.2108042040186), np.float64(2064.0963339560954), np.float64(1998.9788815291624), np.float64(1933.8584058751196), np.float64(1868.7348651890532), np.float64(1803.6082168917148), np.float64(1738.478417611508), np.float64(1673.345423165974), np.float64(1598.4458874721213), np.float64(1533.657895028458), np.float64(1468.8699025847939), np.float64(1404.0819101411303), np.float64(1339.293917697467), np.float64(1274.5059252538033), np.float64(1209.7179328101392), np.float64(1144.9299403664754), np.float64(1080.141947922812), np.float64(1015.3539554791481), np.float64(950.5659630354845), np.float64(885.7779705918211), np.float64(820.9899781481573)]
+#J_P = [np.float64(69483201639.66885), np.float64(64920647095.20532), np.float64(60562326996.2465), np.float64(56403564783.54618), np.float64(52439683897.85787), np.float64(48666007779.93528), np.float64(45077859870.531944), np.float64(41670563610.40155), np.float64(38439442440.297714), np.float64(35379819800.97405), np.float64(32487019133.18418), np.float64(29756363877.681732), np.float64(27183177475.220356), np.float64(24762783366.553623), np.float64(22490504992.43521), np.float64(20361665793.618725), np.float64(18371589210.857788), np.float64(16515598684.906036), np.float64(14789017656.51707), np.float64(13187169566.444551), np.float64(11705377855.442066), np.float64(10338965964.263279), np.float64(9083257333.661774), np.float64(7933575404.391199), np.float64(6885243617.205185), np.float64(5933585412.857342), np.float64(5073924232.101298), np.float64(4301583515.690682), np.float64(3611886704.3791294), np.float64(3000157238.920244), np.float64(2461718560.0676656), np.float64(1991894108.5750177), np.float64(1586007325.1959202)]
 
+with open("i_xx.txt") as f:
+    I_XX = json.load(f)
+with open("centroid_x.txt") as f:
+    CENTROID_X = json.load(f)
+with open("j_p.txt") as f:
+    J_P = json.load(f)
+
+internal_properties.set_torsion_params(db, CENTROID_X, J_P)
 
 for cond in crit_conds:
     print(cond) 
-    print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+    print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3, fuel percentage of:", cond[4], "%")
     internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
     internal_properties.get_coefficient_plots()
     internal_properties.get_forces_plot()
@@ -43,7 +51,8 @@ for cond in crit_conds:
 
     #twist_plot(internal_properties, CENTROID_X, J_P, b, db)
     moment_distribution = internal_properties.internal_bending
-    torsion_distribution = internal_properties.internal_torsion
+    torsion_noT_distribution = internal_properties.internal_torsion_noT
+    torsion_fullT_distribution = internal_properties.internal_torsion_fullT
 
     #PLOT BEAM DEFLECTION
     beam = BeamDeflection(b, db, moment_distrib=moment_distribution)
@@ -51,11 +60,37 @@ for cond in crit_conds:
     beam.plot()
 
     #PLOT BEAM TWIST
-    beam_twist = TorsionDeflection(b, db, torsion_distrib=torsion_distribution, J_distrib=internal_properties.J)
-    beam_twist.plot()
+    beam_twist_noT = TorsionDeflection(b, db, torsion_distrib=torsion_noT_distribution, J_distrib=internal_properties.J)
+    beam_twist_fullT = TorsionDeflection(b, db, torsion_distrib=torsion_fullT_distribution, J_distrib=internal_properties.J)
+    plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)
 
 
     
 
     max_v, max_y = beam.max_deflection()
     print(f"Maximum deflection: {max_v:.6f} at y = {max_y:.3f}")
+
+
+
+if input("Is the final cross section chosen and do you want to proceed to verify deflection at all loading conditions? (y)")=="y":
+    crit_conds = [[2.5, 103544, 163, 1.225, 100],[-1, 103544, 87.29, 1.225, 100]]
+    for cond in crit_conds:
+        print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+        internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
+        internal_properties.get_internal_plot()
+        internal_properties.get_internal_torsion_plot()
+
+        #twist_plot(internal_properties, CENTROID_X, J_P, b, db)
+        moment_distribution = internal_properties.internal_bending
+        torsion_noT_distribution = internal_properties.internal_torsion_noT
+        torsion_fullT_distribution = internal_properties.internal_torsion_fullT
+
+        #PLOT BEAM DEFLECTION
+        beam = BeamDeflection(b, db, moment_distrib=moment_distribution)
+        beam.assignI_XX(I_XX)
+        beam.plot()
+
+        #PLOT BEAM TWIST
+        beam_twist_noT = TorsionDeflection(b, db, torsion_distrib=torsion_noT_distribution, J_distrib=internal_properties.J)
+        beam_twist_fullT = TorsionDeflection(b, db, torsion_distrib=torsion_fullT_distribution, J_distrib=internal_properties.J)
+        plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)

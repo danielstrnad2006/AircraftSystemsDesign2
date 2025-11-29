@@ -5,6 +5,7 @@ from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 from cross_section import * 
 from planform import *
+import json
 
 
 db = 0.5
@@ -85,3 +86,12 @@ plt.show()
 print(I_XX)
 print(CENTROID_X)
 print(J_P)
+
+with open("i_xx.txt", "w") as f:
+    json.dump(I_XX, f)
+
+with open("centroid_x.txt", "w") as f:
+    json.dump(CENTROID_X, f)
+
+with open("j_p.txt", "w") as f:
+    json.dump(J_P, f)
