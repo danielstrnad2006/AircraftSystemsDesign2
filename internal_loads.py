@@ -66,10 +66,10 @@ class HalfWing:
         
         self.y_engine = 7.03893 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
-        self.engine_thrust=363800/2 #N check this value
-        self.y_engine = 7.04 #m # to be determined
+        self.engine_TO_thrust= 185500 #N (https://stands.aero/blog/aircraft-engines/pw2000-overview-and-specifications/)
         self.engine_z_pos=-1.9939/2-0.14*self.chord(self.y_engine) #from centerline 
         self.engine_x_pos=0 #from centerline leading edge, so we assume the center of mass of the engine coincides with the leading edge
+        self.throttle_percentage =100
 
         self.velocity = v_ref #m s^-1
         self.aoa = aoa_ref #deg
@@ -84,6 +84,7 @@ class HalfWing:
 
         self.Cl_0_total = float(0.192557) # to be continued, read from the xflr results directly
         self.CL_grad_total= float((0.962596-0.192557)/10)
+        self.x_centroid_distance = 0
 
         # Inertial forces:
         L = self.b / 2.0
@@ -116,7 +117,7 @@ class HalfWing:
         self.x_cp_ratio = lambda y: (1/4) - self.get_Cm(y, Ai=Ai_case(y))/self.get_Cl(y, Ai=Ai_case(y))
         self.x_cp_distance = lambda y: self.x_cp_ratio(y)*self.chord(y)
 
-        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y, Ai=Ai_case(y))   #up positive lift
+        self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y)   #up positive lift
         self.Drag = lambda y: np.abs(self.Lift(y)*np.sin(np.deg2rad(Ai_case(y))))
         self.aerodynamic_normal = lambda y: np.cos(np.deg2rad(self.aoa))*self.Lift(y) + np.sin(np.deg2rad(self.aoa))*self.Drag(y)
         # quick check: integrate to get total lift on the half wing
@@ -134,9 +135,24 @@ class HalfWing:
         self.internal_shear = self.function_to_intrp1d(self.internal_shear)
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
-        #self.reaction_bending = self.function_to_intrp1d(self.reaction_bending)
+
         self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
+
+
+        self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.aerodynamic_normal(y)
+
+        self.thrust = self.engine_TO_thrust*(self.rho/1.225)*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
+        #print(self.thrust)
+        #print(self.thrust/self.engine_TO_thrust*100)
+        
+        self.reaction_torsion = self.integrate_halfspan(self.torsion_distribtuion)(self.b/2)
+        self.internal_torsion_noT = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - (self.x_centroid_distance(self.y_engine)*self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_torsion
+        self.internal_torsion_fullT = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - (self.x_centroid_distance(self.y_engine)*self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) + ((self.throttle_percentage/100)*self.thrust*self.engine_z_pos if y < self.y_engine else 0)- self.reaction_torsion
+        
+        self.internal_torsion_noT = self.function_to_intrp1d(self.internal_torsion_noT)
+        self.internal_torsion_fullT = self.function_to_intrp1d(self.internal_torsion_fullT)
+        
 
 
     def torque_per_span(self,y):
@@ -146,6 +162,7 @@ class HalfWing:
 
         x_pos, z_pos = centroid_position(y)
         return (self.x_cp_distance(y) - x_pos) * self.Lift(y)
+    
     def internal_torque(self, bound):
         torque_lift, err = sp.integrate.quad(lambda y: self.torque_per_span(y), 0, bound)
         if bound >= self.y_engine:
@@ -156,7 +173,7 @@ class HalfWing:
                 self.engine_z_pos - z_pos_e
             ])
             engine_force = np.array([
-                -self.engine_thrust,
+                -self.engine_TO_thrust,
                 0,
                 self.m_engine_and_nacelle * self.g
             ])
@@ -165,6 +182,7 @@ class HalfWing:
             engine_torque = 0
         return torque_lift + engine_torque
     
+
     def torque_plot(self):
         y_vals = np.linspace(0, self.b/2, 1000)
         torques = []
@@ -177,6 +195,7 @@ class HalfWing:
         plt.ylabel("Cumulative torque [Nm]")
         plt.grid(True)
         plt.show()   
+
         
 
 
@@ -247,19 +266,78 @@ class HalfWing:
         y = np.linspace(0, self.b/2, 120)
         Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
         Mx_plot = [self.internal_bending(y_pos) for y_pos in y]
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
+        
+        # Top subplot: Shear Force
+        ax1.plot(y, Vz_plot, linewidth=2.5, label="Internal Shear Force [N]", color='#1f77b4')
+        ax1.set_ylabel("Internal Shear Force [N]", fontsize=12, fontweight='bold', color='black')
+        ax1.tick_params(axis='y', labelsize=11)
+        ax1.tick_params(axis='x', labelsize=11)
+        ax1.grid(True, alpha=0.3, linestyle='--')
+        ax1.axhline(y=0, color='k', linewidth=0.8)
+        ax1.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax1.set_xlim(0, self.b/2)
+        
+        # Bottom subplot: Bending Moment
+        ax2.plot(y, Mx_plot, linewidth=2.5, color='#ff7f0e', label="Internal Bending Moment [Nm]")
+        ax2.set_xlabel("Spanwise Position y [m]", fontsize=12, fontweight='bold')
+        ax2.set_ylabel("Internal Bending Moment [Nm]", fontsize=12, fontweight='bold', color='black')
+        ax2.tick_params(axis='y', labelsize=11)
+        ax2.tick_params(axis='x', labelsize=11)
+        ax2.grid(True, alpha=0.3, linestyle='--')
+        ax2.axhline(y=0, color='k', linewidth=0.8)
+        ax2.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax2.set_xlim(0, self.b/2)
+        
+        plt.tight_layout()
+
+        plt.show()
+
+    def get_internal_torsion_plot(self):
+        y = np.linspace(0, self.b/2, 120)
+        My_plot_noT = [self.internal_torsion_noT(y_pos) for y_pos in y]
+        My_plot_fullT = [self.internal_torsion_fullT(y_pos) for y_pos in y]
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        ax1.plot(y, My_plot_noT, linewidth=2.5, label="Internal Torsional Moment at zero throttle [Nm]", color='#1f77b4')
+        ax1.plot(y, My_plot_fullT, linewidth=2.5, label="Internal Torsional Moment at full throttle [Nm]", color='#ff7f0e')
+        ax1.set_xlabel("Spanwise Position y [m]", fontsize=12, fontweight='bold')
+        ax1.set_ylabel("Internal Torsion Moment M_y [Nm]", fontsize=12, fontweight='bold')
+        ax1.tick_params(labelsize=11)
+        ax1.axhline(y=0, color='k', linewidth=0.8)
+        ax1.legend(fontsize=11, loc='best', framealpha=0.9)
+        ax1.grid(True, alpha=0.3, linestyle='--')
+        plt.tight_layout()
+        plt.show()
+
+    def get_debugging_torsion_plot(self):
+        y = np.linspace(0, self.b/2, 120)
+        x_cp_plot = [self.x_cp_distance(y_pos) for y_pos in y]
+        x_centroid_plot = [self.x_centroid_distance (y_pos) for y_pos in y]
         fig, ax1 = plt.subplots()
-        l1, = ax1.plot(y, Vz_plot, label="Internal Shear Force [N]")
+        l1, = ax1.plot(y, x_cp_plot, label="Distance of centre of pressure to the LE [m]")
+        l2, = ax1.plot(y, x_centroid_plot, label="Distance of centroid to the LE [m]")
         ax1.set_xlabel("y [m]")
-        ax1.set_ylabel("Internal Force [N]")
+        ax1.set_ylabel("Distance from the LE [m]")
 
         ax2 = ax1.twinx()
-        l2, = ax2.plot(y, Mx_plot, color='k', label="internal bending moment distribution [Nm]")
-        ax2.set_ylabel("Internal Moment [N]")
-        handles = [l1, l2]
+        aero_plot = [self.aerodynamic_normal(y_pos) for y_pos in y]
+        l3, = ax2.plot(y, aero_plot, color='k', label="aerodynamic force distribution [N/m]")
+        ax2.set_ylabel("Force per unit span [N/m]")
+        handles = [l1, l2, l3]
         labels = [h.get_label() for h in handles]
         ax1.legend(handles, labels, loc='lower right')
 
         plt.show()
+
+        J_plot = [self.J(y_pos) for y_pos in y]
+        fig, ax1 = plt.subplots()
+        l1, = ax1.plot(y, J_plot, label="torsion constant [m^4]")
+        ax1.set_xlabel("y [m]")
+        ax1.set_ylabel("torsion constant[m^4]")
+        ax1.legend()
+
+        plt.show()
+
 
     def update_fuel(self, percentage):
         self.fuel_percentage = percentage
@@ -270,13 +348,6 @@ class HalfWing:
         self.compute_internal_forces()
 
 
-    # def set_conditions(self, velocity, CL_des, rho):
-    #     self.velocity = velocity #m s^-1
-    #
-    #     self.aoa = (CL_des-self.Cl_0_total)/self.CL_grad_total #deg
-    #     print("target angle of attack is: ", self.aoa)
-    #     self.rho = rho #kg m^-3
-    #     self.compute_internal_forces()
 
 
 
@@ -319,6 +390,13 @@ class HalfWing:
         complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]
         interpolated = sp.interpolate.interp1d(y_pos_lst, complicated_function_lst, kind='cubic', fill_value="extrapolate")
         return interpolated
+    
+    def set_torsion_params (self, db, x_centroid_arr_mm, J_arr_mm4):
+        y = np.arange(0, self.b / 2, db)
+        x_centroid_arr = [el*1e-3 for el in x_centroid_arr_mm]
+        self.x_centroid_distance = sp.interpolate.interp1d(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
+        J_arr = [el*1e-12*1e7 for el in x_centroid_arr_mm]
+        self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
 halfWing = HalfWing(params_intrpl)
 
@@ -344,6 +422,8 @@ def goThroughAll():
              [2.5, 62767, 163, 1.225, 0],  
              [-1, 62767, 67.96, 1.225, 0], 
              [-1, 62767, 154, 1.225, 0]]
+    
+
     moment_lst = []
     for cond in conds: 
         halfWing.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])

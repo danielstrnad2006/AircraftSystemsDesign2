@@ -5,6 +5,7 @@ from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 from cross_section import * 
 from planform import *
+import json
 
 
 db = 0.5
@@ -21,6 +22,7 @@ CENTROID_X = []
 CENTROID_Y = []
 I_XX = []
 I_YY = []
+J_P = []
 
 def interp(object, location):
     y = np.arange(0, b / 2, db)
@@ -41,12 +43,13 @@ while b_cur < wing.b/2:
                                 t_skin_up=5, t_skin_down=5, stiffeners=stiffeners,
                                 filepath="airfoils/NASA SC(2)-0414.dat", display_data=True)
 
-    centroid_X, centroid_Y, I_xx, I_yy = cs.assembly_centroid_finder()
+    centroid_X, centroid_Y, I_xx, I_yy, J_p = cs.assembly_centroid_finder()
     b_pos.append(b_cur)
     CENTROID_X.append(centroid_X)
     CENTROID_Y.append(centroid_Y)
     I_XX.append(I_xx)
     I_YY.append(I_yy)
+    J_P.append(J_p)
 
     cross_sections.append(cs)
 
@@ -70,6 +73,7 @@ plt.figure()
 
 plt.plot(b_pos, I_XX, label="Ixx")
 plt.plot(b_pos, I_YY, label="Iyy")
+plt.plot(b_pos, J_P, label="J_P")
 
 plt.xlabel("Position along blade (b_pos)")
 plt.ylabel("Moment of Inertia")
@@ -80,3 +84,14 @@ plt.grid(True)
 plt.show()
 
 print(I_XX)
+print(CENTROID_X)
+print(J_P)
+
+with open("i_xx.txt", "w") as f:
+    json.dump(I_XX, f)
+
+with open("centroid_x.txt", "w") as f:
+    json.dump(CENTROID_X, f)
+
+with open("j_p.txt", "w") as f:
+    json.dump(J_P, f)
