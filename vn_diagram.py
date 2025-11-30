@@ -1,7 +1,9 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from pygments.styles.dracula import purple
+from isort.profiles import black
+from pygments.styles.dracula import purple, yellow
+
 
 class VnDiagram:
     def __init__(self, weight, label, color, g=9.81, rho=1.225, S=149.9,
@@ -34,13 +36,23 @@ class VnDiagram:
         print("V_d", self.V_D)
         print("n_max", self.n_max)
         print("n_max", self.n_min)
-        print()
+
+
 
         self.V_F_TO = 1.6 * self.V_s  # flap speed for MTOW to
-        self.V_F_L= 1.8 * self.V_s0_L
+
         self.V_s0_TO = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max_takeoff * self.S * self.rho))
         self.V_s0_L = math.sqrt(2 * self.W * 0.453592 * self.g / (self.CL_max_landing * self.S * self.rho))
+
+        self.V_F_L = 1.8 * self.V_s0_L
         self.upper_lim = self.V_s0_TO * math.sqrt(2)
+        self.upper_lim_land = self.V_s0_L * math.sqrt(2)
+
+        print("V_F TO", self.V_F_TO)
+        print("V_F L", self.V_F_L)
+        print("V_s0 TO", self.V_s0_TO)
+        print("V_s0 L", self.V_s0_L)
+        print()
 
     def plot(self, ax):
         # Positive stall curve
@@ -53,6 +65,13 @@ class VnDiagram:
 
         V_extended = [self.upper_lim, min(self.V_F_TO, math.sqrt(2) * self.V_s)]
         n_extended = [2, 2]
+
+        V_flap_land= np.linspace(0, self.upper_lim_land, 100)
+        n_flap_land = (V_flap_land / self.V_s0_L) ** 2
+
+        V_extended_landing = [self.upper_lim_land, min(self.V_F_L, math.sqrt(2) * self.V_s)]
+        n_extended_landing = [2, 2]
+
 
         # Positive limit
         V_pos = [self.V_A, self.V_D]
@@ -84,15 +103,18 @@ class VnDiagram:
         ax.plot(V_neg_lim, n_neg_lim, color=self.color)
 
         # Only plot flap curve for MTOW
-        if self.W == 228275.445:
-            ax.plot(V_flap, n_flap, color=purple, label="Flaps Extended Configuration")
-            ax.plot(V_extended, n_extended, color=purple)
+
+        ax.plot(V_flap_land, n_flap_land, color="#FF69B4", label="Flaps Extended Landing Configuration")
+        ax.plot(V_extended_landing, n_extended_landing, color="#FF69B4")
+        ax.plot(V_flap, n_flap, color=purple, label="Flaps Extended Take-Off Configuration")
+        ax.plot(V_extended, n_extended, color=purple)
+
 
         ax.set_title(self.label)
         ax.set_xlabel("V_EAS (m/s)")
         ax.set_ylabel("Load Factor n")
         ax.grid(True)
-        ax.set_ylim(-1.2, 3)
+        ax.set_ylim(-1.2, 3.1)
         ax.legend()
 
 
@@ -107,7 +129,7 @@ colors = ['blue', 'red', 'green']
 fig, ax = plt.subplots(1, 3, figsize=(15, 5))
 
 for axis, (name, W), color in zip(ax, weights.items(), colors):
-    diagram = VnDiagram(W, f"V–n Diagram Cruise – {name}", color)
+    diagram = VnDiagram(W, f"V–n Diagram Sea Level – {name}", color)
     diagram.plot(axis)
 
 
