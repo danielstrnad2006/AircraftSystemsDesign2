@@ -10,7 +10,6 @@ from Daniel_test_Torsion_Deflection import TorsionDeflection, plotTwists
 import math
 import numpy as np
 from scipy.optimize import fsolve
-from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 from cross_section import * 
 from planform import *
@@ -20,7 +19,7 @@ db = 0.5
 b = 32.1632
 
 internal_properties=internal_loads.halfWing
-crit_conds = [[2.5, 103544, 163, 1.225, 100],[-1, 103544, 87.29, 1.225, 100]]
+crit_conds = [[2.5, 103544, 308.7, 1.225, 100], [-1, 103544,  87.3, 0.433, 100], [2.5,  43807, 308.7, 1.225,   0], [2.5, 103544, 138.0, 1.225, 100]]
 
 #I_XX = [np.float64(33480308035.556774), np.float64(31856908251.130173), np.float64(30279526734.80252), np.float64(28747742163.1427), np.float64(27261133202.22146), np.float64(25819278507.381264), np.float64(24421756722.999924), np.float64(23068146482.247917), np.float64(21758026406.839333), np.float64(20490975106.77606), np.float64(19266571180.085144), np.float64(18084393212.549038), np.float64(16944019777.428473), np.float64(15845029435.177847), np.float64(14787000733.152805), np.float64(13769512205.30965), np.float64(12792142371.896643), np.float64(11854469739.136549), np.float64(10956072798.900415), np.float64(10096530028.372175), np.float64(1053064031.2885389), np.float64(930135986.3936577), np.float64(817167263.0431123), np.float64(713737138.6943815), np.float64(619424890.8049406), np.float64(533809796.8322648), np.float64(456471134.23382986), np.float64(386988180.4671123), np.float64(324940212.9895887), np.float64(269906509.25873303), np.float64(221466346.73202258), np.float64(179199002.8669331), np.float64(142683755.12093985)]
 #CENTROID_X = [np.float64(2910.365816629366), np.float64(2845.284184294819), np.float64(2780.2000091008904), np.float64(2715.1132578730003), np.float64(2650.02389685698), np.float64(2584.9318917063597), np.float64(2519.8372074693193), np.float64(2454.739808575291), np.float64(2389.6396588212087), np.float64(2324.536721357386), np.float64(2259.4309586730137), np.float64(2194.3223325812705), np.float64(2129.2108042040186), np.float64(2064.0963339560954), np.float64(1998.9788815291624), np.float64(1933.8584058751196), np.float64(1868.7348651890532), np.float64(1803.6082168917148), np.float64(1738.478417611508), np.float64(1673.345423165974), np.float64(1598.4458874721213), np.float64(1533.657895028458), np.float64(1468.8699025847939), np.float64(1404.0819101411303), np.float64(1339.293917697467), np.float64(1274.5059252538033), np.float64(1209.7179328101392), np.float64(1144.9299403664754), np.float64(1080.141947922812), np.float64(1015.3539554791481), np.float64(950.5659630354845), np.float64(885.7779705918211), np.float64(820.9899781481573)]
@@ -73,25 +72,50 @@ for cond in crit_conds:
 
 
 if input("Is the final cross section chosen and do you want to proceed to verify deflection at all loading conditions? (y)")=="y":
-    crit_conds = [[2.5, 103544, 138.016, 1.225, 100],
-             [2.5, 103544, 163, 1.225, 100],  
-             [-1, 103544, 87.29, 1.225, 100], 
-             [-1, 103544, 154, 1.225, 100],
-             
-             [2.5, 43807, 89.772, 1.225, 0],
-             [2.5, 43807, 163, 1.225, 0],  
-             [-1, 43807, 56.777, 1.225, 0], 
-             [-1, 43807, 154, 1.225, 0],
+    crit_conds = [
+    [2.5, 103544, 138.0, 0.433, 100],   # LC-1 MTOW FL310
+    [2.5,  62767, 107.5, 0.433,   0],   # LC-2 ZFW  FL310
+    [2.5,  43807,  89.8, 0.433,   0],   # LC-3 OEW  FL310
 
-             [2.5, 62767, 107.46, 1.225, 0],
-             [2.5, 62767, 163, 1.225, 0],  
-             [-1, 62767, 67.96, 1.225, 0], 
-             [-1, 62767, 154, 1.225, 0]]
+    [2.5, 103544, 138.0, 1.225, 100],   # LC-4 MTOW FL0
+    [2.5,  62767, 107.5, 1.225,   0],   # LC-5 ZFW  FL0
+    [2.5,  43807,  89.8, 1.225,   0],   # LC-6 OEW  FL0
+
+
+    # --- Negative manoeuvring @ VS1 ---
+    [-1, 103544,  87.3, 0.433, 100],    # LC-7 MTOW FL310
+    [-1,  62767,  67.7, 0.433,   0],    # LC-8 ZFW  FL310
+    [-1,  43807,  56.8, 0.433,   0],    # LC-9 OEW  FL310
+
+    [-1, 103544,  87.3, 1.225, 100],    # LC-10 MTOW FL0
+    [-1,  62767,  67.7, 1.225,   0],    # LC-11 ZFW  FL0
+    [-1,  43807,  56.8, 1.225,   0],    # LC-12 OEW  FL0
+
+
+    # --- Positive manoeuvring @ VD ---
+    [2.5, 103544, 163.0, 0.433, 100],   # LC-13 MTOW FL310
+    [2.5,  62767, 163.0, 0.433,   0],   # LC-14 ZFW  FL310
+    [2.5,  43807, 163.0, 0.433,   0],   # LC-15 OEW  FL310
+
+    [2.5, 103544, 308.7, 1.225, 100],   # LC-16 MTOW FL0
+    [2.5,  62767, 308.7, 1.225,   0],   # LC-17 ZFW  FL0
+    [2.5,  43807, 308.7, 1.225,   0],   # LC-18 OEW  FL0
+
+
+    # --- Positive manoeuvring @ VC ---
+    [2.5, 103544, 154.0, 0.433, 100],   # LC-19 MTOW FL310
+    [2.5,  62767, 154.0, 0.433,   0],   # LC-20 ZFW  FL310
+    [2.5,  43807, 154.0, 0.433,   0],   # LC-21 OEW  FL310
+
+    [2.5, 103544, 154.0, 1.225, 100],   # LC-22 MTOW FL0
+    [2.5,  62767, 154.0, 1.225,   0],   # LC-23 ZFW  FL0
+    [2.5,  43807, 154.0, 1.225,   0]    # LC-24 OEW  FL0
+    ]
     for cond in crit_conds:
         print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
         internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
-        internal_properties.get_internal_plot()
-        internal_properties.get_internal_torsion_plot()
+        #internal_properties.get_internal_plot()
+        #internal_properties.get_internal_torsion_plot()
 
         #twist_plot(internal_properties, CENTROID_X, J_P, b, db)
         moment_distribution = internal_properties.internal_bending
@@ -101,9 +125,14 @@ if input("Is the final cross section chosen and do you want to proceed to verify
         #PLOT BEAM DEFLECTION
         beam = BeamDeflection(b, db, moment_distrib=moment_distribution)
         beam.assignI_XX(I_XX)
-        beam.plot()
+        #beam.plot()
 
         #PLOT BEAM TWIST
         beam_twist_noT = TorsionDeflection(b, db, torsion_distrib=torsion_noT_distribution, J_distrib=internal_properties.J)
         beam_twist_fullT = TorsionDeflection(b, db, torsion_distrib=torsion_fullT_distribution, J_distrib=internal_properties.J)
-        plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)
+        #plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)
+        print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+        print("The Reaction Shear Force is:", internal_properties.internal_shear(0))
+        print("The Reaction Bending Moment is:", internal_properties.internal_bending(0))
+        print("The Reaction Torsion Moment at full throttle is:", internal_properties.internal_torsion_fullT(0))
+        print("The Reaction Torsion Moment at zero throttle is:", internal_properties.internal_torsion_noT(0))
