@@ -408,6 +408,7 @@ def goThroughAll():
     # MTOW=103 544 kilograms, 
     # ZFW = 62 767.459 kilograms
     # OEW = 43 807.4567 kilograms
+            #[n [-], mass[kg], v_EAS [m/s], rho, fuel percentage (100 for MTOW and 0 for OEW and ZFW)]
     conds = [[2.5, 103544, 138.016, 1.225, 100],
              [2.5, 103544, 163, 1.225, 100],  
              [-1, 103544, 87.29, 1.225, 100], 
@@ -424,35 +425,21 @@ def goThroughAll():
              [-1, 62767, 154, 1.225, 0]]
     
 
-    moment_lst = []
     for cond in conds: 
         halfWing.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
         print()
         print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
-        print("The Reaction Shear Force is:", halfWing.reaction_shear)
-        print("The Reaction Bending Moment is:", halfWing.reaction_bending)
+        print("The Reaction Shear Force is:", halfWing.internal_shear(0))
+        print("The Reaction Bending Moment is:", halfWing.internal_bending(0))
+        print("The Reaction Torsion Moment at full throttle is:", halfWing.internal_torsion_fullT(0))
+        print("The Reaction Torsion Moment at zero throttle is:", halfWing.internal_torsion_noT(0))
         #halfWing.get_coefficient_plots()
         #halfWing.get_forces_plot()
-        moment_lst.append(halfWing.reaction_bending)
         print()
         print()
     print()
     print()
     print()
-    print("The maximum bending moment of: ", max(moment_lst), "at case ", moment_lst.index(max(moment_lst)))
-    print("This corresponds to the case")
-    crit_conds = []
-    cond = conds[moment_lst.index(max(moment_lst))]
-    crit_conds.append(cond)
-    print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
-    print(cond)
-    print()
-    print("The maximum bending moment of: ", min(moment_lst), "at case ", moment_lst.index(min(moment_lst)))
-    print("This corresponds to the case")
-    cond = conds[moment_lst.index(min(moment_lst))]
-    crit_conds.append(cond)
-    print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
-    print(cond)
-    print()
+    
 
-#goThroughAll()
+goThroughAll()
