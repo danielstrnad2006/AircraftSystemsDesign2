@@ -395,7 +395,7 @@ class HalfWing:
         y = np.arange(0, self.b / 2, db)
         x_centroid_arr = [el*1e-3 for el in x_centroid_arr_mm]
         self.x_centroid_distance = sp.interpolate.interp1d(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
-        J_arr = [el*1e-12*1e7 for el in x_centroid_arr_mm]
+        J_arr = [el*1e-12 for el in J_arr_mm4]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
 halfWing = HalfWing(params_intrpl)

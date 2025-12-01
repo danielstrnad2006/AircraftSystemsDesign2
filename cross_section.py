@@ -256,7 +256,7 @@ class CrossSection:
         return I_xx_sum, I_yy_sum
     
     def find_polar_inertia(self, components):
-        A = (self.x_spar2 - self.x_spar1) * (self.h_spar2 + self.h_spar1)
+        A = (self.x_spar2 - self.x_spar1) * (self.h_spar2 + self.h_spar1) * (1/2)
         ds_over_t = 0
 
         for comp in components:
