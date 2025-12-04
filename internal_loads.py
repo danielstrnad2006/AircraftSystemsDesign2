@@ -138,7 +138,7 @@ class HalfWing:
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
 
-        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - (np.sin(np.deg2rad(34.5))*self.thrust if y < self.y_engine else 0)- self.reaction_bending
+        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
 
