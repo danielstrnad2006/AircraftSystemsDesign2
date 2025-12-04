@@ -131,18 +131,20 @@ class HalfWing:
 
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
+        self.thrust = self.engine_TO_thrust*(self.rho/1.225)*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
+
         self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_shear 
         self.internal_shear = self.function_to_intrp1d(self.internal_shear)
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
 
-        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
+        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - (np.sin(np.deg2rad(34.5))*self.thrust if y < self.y_engine else 0)- self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
 
         self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.aerodynamic_normal(y)
 
-        self.thrust = self.engine_TO_thrust*(self.rho/1.225)*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
+
         #print(self.thrust)
         #print(self.thrust/self.engine_TO_thrust*100)
         
