@@ -131,7 +131,7 @@ class HalfWing:
 
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
-        self.thrust = self.engine_TO_thrust*(self.rho/1.225)*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
+        self.thrust = self.engine_TO_thrust*(self.rho/1.225) #*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
 
         self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_shear 
         self.internal_shear = self.function_to_intrp1d(self.internal_shear)
