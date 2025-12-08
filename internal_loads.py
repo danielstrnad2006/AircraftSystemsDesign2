@@ -138,7 +138,7 @@ class HalfWing:
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
 
-        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) - self.reaction_bending
+        self.internal_bending = lambda y: self.integrate_halfspan(self.internal_shear)(y) + (((self.thrust*np.abs(self.engine_z_pos)*np.sin(np.deg2rad(34))) if self.g_loading <0 else 0) if y < self.y_engine else 0) - self.reaction_bending
         self.internal_bending = self.function_to_intrp1d(self.internal_bending)
 
 
@@ -265,30 +265,30 @@ class HalfWing:
         plt.show()
 
     def get_internal_plot(self):
-        y = np.linspace(0, self.b/2, 120)
-        Vz_plot = [self.internal_shear(y_pos) for y_pos in y]
-        Mx_plot = [self.internal_bending(y_pos) for y_pos in y]
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
+        y = np.linspace(0, self.b/2, 200)
+        Vz_plot = [self.internal_shear(y_pos)/1000 for y_pos in y]
+        Mx_plot = [self.internal_bending(y_pos)/1000000 for y_pos in y]
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.5, 3.0))
         
         # Top subplot: Shear Force
-        ax1.plot(y, Vz_plot, linewidth=2.5, label="Internal Shear Force [N]", color='#1f77b4')
-        ax1.set_ylabel("Internal Shear Force [N]", fontsize=12, fontweight='bold', color='black')
-        ax1.tick_params(axis='y', labelsize=11)
-        ax1.tick_params(axis='x', labelsize=11)
+        ax1.plot(y, Vz_plot, linewidth=2.5, label="Internal Shear Force [kN]", color='#1f77b4')
+        ax1.set_ylabel("Internal Shear Force [kN]", fontsize=10, fontweight='bold', color='black')
+        ax1.tick_params(axis='y', labelsize=9)
+        ax1.tick_params(axis='x', labelsize=9)
         ax1.grid(True, alpha=0.3, linestyle='--')
         ax1.axhline(y=0, color='k', linewidth=0.8)
-        ax1.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax1.legend(loc='best', fontsize=9, framealpha=0.9)
         ax1.set_xlim(0, self.b/2)
         
         # Bottom subplot: Bending Moment
-        ax2.plot(y, Mx_plot, linewidth=2.5, color='#ff7f0e', label="Internal Bending Moment [Nm]")
-        ax2.set_xlabel("Spanwise Position y [m]", fontsize=12, fontweight='bold')
-        ax2.set_ylabel("Internal Bending Moment [Nm]", fontsize=12, fontweight='bold', color='black')
-        ax2.tick_params(axis='y', labelsize=11)
-        ax2.tick_params(axis='x', labelsize=11)
+        ax2.plot(y, Mx_plot, linewidth=2.5, color='#ff7f0e', label="Internal Bending Moment [MNm]")
+        ax2.set_xlabel("Spanwise Position y [m]", fontsize=10, fontweight='bold')
+        ax2.set_ylabel("Internal Bending Moment [MNm]", fontsize=10, fontweight='bold', color='black')
+        ax2.tick_params(axis='y', labelsize=9)
+        ax2.tick_params(axis='x', labelsize=9)
         ax2.grid(True, alpha=0.3, linestyle='--')
         ax2.axhline(y=0, color='k', linewidth=0.8)
-        ax2.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax2.legend(loc='best', fontsize=9, framealpha=0.9)
         ax2.set_xlim(0, self.b/2)
         
         plt.tight_layout()
@@ -372,7 +372,7 @@ class HalfWing:
         Numerically integrates the given integrand function over the half-span of the wing (from y=0 to y=b/2)
         using the trapezoidal rule, and returns the interpolated value of the integral.
         """
-        dy = 0.1
+        dy = 0.05
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         #print(y_pos_lst)
@@ -386,7 +386,7 @@ class HalfWing:
         return integral_cont
 
     def function_to_intrp1d(self, complicated_function):
-        dy = 0.1
+        dy = 0.05
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]

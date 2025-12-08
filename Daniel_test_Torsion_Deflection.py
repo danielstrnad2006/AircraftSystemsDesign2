@@ -38,7 +38,7 @@ def plotTwists(theta_fullT, theta_noT, N=200):
     theta_span_fullT = np.array([theta_fullT(y)*180/np.pi for y in y_span])
     theta_span_noT = np.array([theta_noT(y)*180/np.pi for y in y_span])
 
-    plt.figure()
+    plt.figure(figsize=(7.5, 1.8))
     plt.plot(y_span, theta_span_fullT, label = "Wing twist with full throttle")
     plt.plot(y_span, theta_span_noT, label = "Wing twist with zero throttle")
     plt.xlabel("y[m]")

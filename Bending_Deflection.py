@@ -54,8 +54,8 @@ class BeamDeflection:
 
         plt.figure()
         plt.plot(y_span, v_span)
-        plt.xlabel("y")
-        plt.ylabel("v(y)")
+        plt.xlabel("y [m]")
+        plt.ylabel("v(y) [m]")
         plt.title("Deflection Distribution")
         plt.grid(True)
 
