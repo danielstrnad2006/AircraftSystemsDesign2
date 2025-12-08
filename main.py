@@ -110,6 +110,9 @@ if input("Is the final cross section chosen and do you want to proceed to verify
     [2.5,  62767, 154.0, 1.225,   0],   # LC-23 ZFW  FL0
     [2.5,  43807, 154.0, 1.225,   0]    # LC-24 OEW  FL0
     ]
+    twist_tip_lst = []
+    deflection_tip_lst = []
+
     for cond in crit_conds:
         print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
         internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
@@ -137,8 +140,15 @@ if input("Is the final cross section chosen and do you want to proceed to verify
         print("The Reaction Torsion Moment at zero throttle is:", internal_properties.internal_torsion_noT(0))
         print()
         print("The tip deflection is:", beam.v(16.0816)* 1e15, "mm")
+        deflection_tip_lst.append(beam.v(16.0816)* 1e12)
         print("The tip twist (zero T) is:", beam_twist_noT.theta(16.0816)*180/np.pi, "deg")
         print("The tip twist (full T) is:", beam_twist_fullT.theta(16.0816)*180/np.pi, "deg")
+        if beam_twist_fullT.theta(16.0816)>0:
+            twist_tip_lst.append(max(beam_twist_fullT.theta(16.0816)*180/np.pi, beam_twist_noT.theta(16.0816)*180/np.pi))
+        else: 
+            twist_tip_lst.append(min(beam_twist_noT.theta(16.0816)*180/np.pi, beam_twist_fullT.theta(16.0816)*180/np.pi))
         print("-----------------------------------------------------")
         print()
         print()
+    print("The tip deflections for all loading conditions in m are:", deflection_tip_lst)
+    print("The tip twists for all loading conditions in deg are:", twist_tip_lst)

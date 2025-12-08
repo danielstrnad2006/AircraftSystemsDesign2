@@ -372,7 +372,7 @@ class HalfWing:
         Numerically integrates the given integrand function over the half-span of the wing (from y=0 to y=b/2)
         using the trapezoidal rule, and returns the interpolated value of the integral.
         """
-        dy = 0.05
+        dy = 0.1
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         #print(y_pos_lst)
@@ -386,7 +386,7 @@ class HalfWing:
         return integral_cont
 
     def function_to_intrp1d(self, complicated_function):
-        dy = 0.05
+        dy = 0.1
         length = self.b/2
         y_pos_lst = np.arange(0, length, dy)
         complicated_function_lst = [complicated_function(y_pos) for y_pos in y_pos_lst]
