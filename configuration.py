@@ -15,6 +15,9 @@ b_cur = 0
 b_pos = []
 cross_sections = []
 
+PLOT = False
+
+
 wing = WingSizing(S_w=149.9, b=b, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
                  leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
 
@@ -48,12 +51,13 @@ while b_cur < wing.b/2:
        (0.60, 'down', 90, 10),
     ]
 
-    wing.plot(chord_position=b_cur)
+    if PLOT:
+        wing.plot(chord_position=b_cur)
 
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.65, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
                                 t_spar1=2.3, t_spar2=2.3,
                                 t_skin_up=2.3, t_skin_down=2.3, stiffeners=stiffeners,
-                                filepath="airfoils/NASA SC(2)-0414.dat", display_data=True)
+                                filepath="airfoils/NASA SC(2)-0414.dat", save_plot=PLOT)
 
     centroid_X, centroid_Y, I_xx, I_yy, J_p = cs.assembly_centroid_finder()
     b_pos.append(b_cur)
