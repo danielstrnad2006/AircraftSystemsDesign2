@@ -54,3 +54,4 @@ def twist_plot(half_wing, centroid_X_arr, J_P_arr, b, db, N=60):
     plt.grid(True)
     plt.show()
 
+
