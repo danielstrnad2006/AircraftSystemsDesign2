@@ -276,6 +276,8 @@ class CrossSection:
         return J
 
     def find_Q(self, use_max_H=True):
+        ### Use max H or use average H
+
         if use_max_H:
             h = max(self.h_spar1, self.h_spar2)
         else:
