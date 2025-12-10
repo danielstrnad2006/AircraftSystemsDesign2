@@ -51,7 +51,7 @@ def centroid_position(y):
     return 2,0.2
 
 class HalfWing:
-    def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1, fuel_percentage_ref=100):
+    def __init__(self, params, v_ref=None, aoa_ref=None, rho_ref=None, g_loading=1, fuel_percentage_ref=100, ribs_locations=None):
         # store interpolators (intercept and gradient) passed in params
         self.CL_des   = None
         self.chord    = params[0]
@@ -63,6 +63,8 @@ class HalfWing:
         self.S = 149.9 #m
         self.b = 32.1632 #m^2
         self.G=28*10**9 #change this to the G value of aluminium we are using
+
+        self.ribs_locations = ribs_locations if ribs_locations is not None else np.linspace(0, self.b/2, 5)
         
         self.y_engine = 7.03893 #m # to be determined
         self.m_engine_and_nacelle = 3989.45376 #kg
@@ -120,14 +122,15 @@ class HalfWing:
         self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y)   #up positive lift
         self.Drag = lambda y: np.abs(self.Lift(y)*np.sin(np.deg2rad(Ai_case(y))))
         self.aerodynamic_normal = lambda y: np.cos(np.deg2rad(self.aoa))*self.Lift(y) + np.sin(np.deg2rad(self.aoa))*self.Drag(y)
+        self.aerodynamic_normal = self.function_ribs_discretization(self.aerodynamic_normal)
         # quick check: integrate to get total lift on the half wing
-        self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
-        print("Total lift is: ",2*self.total_lift_half,"[N]")
+        #self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
+        #print("Total lift is: ",2*self.total_lift_half,"[N]")
 
 
-        cont_normal_force = lambda y: self.Lift(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
+        cont_normal_force = lambda y: self.aerodynamic_normal(y) + self.g*self.g_loading*(self.wing_mass_distribution(y))
 
-        self.reaction_shear = -(sp.integrate.quad(cont_normal_force, 0, self.b/2)[0])
+        self.reaction_shear = -(self.integrate_halfspan(cont_normal_force)(self.b/2))
 
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
@@ -399,6 +402,29 @@ class HalfWing:
         self.x_centroid_distance = sp.interpolate.interp1d(y, x_centroid_arr, kind='cubic', fill_value="extrapolate")
         J_arr = [el*1e-12 for el in J_arr_mm4]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
+
+    def set_buckling_params(self, db, Q_arr):
+        y = np.arange(0, self.b / 2, db)
+        self.Q_buckling = sp.interpolate.interp1d(y, Q_arr, kind='cubic', fill_value="extrapolate")
+        self.y_max = lambda y: 0.07 * self.chord(y)## Change when known!
+        self.A_m = lambda y: self.johannes_fuel_constant * (self.chord(y)**2)
+
+    def function_ribs_discretization(self, function):
+        avg_values = []
+        for i in range(len(self.ribs_locations)-1):
+            domain = np.linspace(self.ribs_locations[i], self.ribs_locations[i+1], 10)
+            function_arr = [function(y_pos) for y_pos in domain]
+            integral = sp.integrate.trapezoid(function_arr, x=domain)
+            segment_length = self.ribs_locations[i+1]-self.ribs_locations[i]
+            avg_value = integral/segment_length
+            #store avg_value for this segment
+            avg_values.append(avg_value)
+        #create a piecewise constant function based on avg_values
+        piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='previous', fill_value="extrapolate")
+        return piecewise_function
+
+            
+        
 
 halfWing = HalfWing(params_intrpl)
 
