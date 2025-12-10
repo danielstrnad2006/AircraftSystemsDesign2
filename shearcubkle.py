@@ -1,12 +1,20 @@
-
 import math
+from planform import *
+
+db = 0.5
+b = 32.1632
+
+wing = WingSizing(S_w=149.9, b=b, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
+                 leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
+
+# wing.chord(2)  # chord at 2 meters
 poisson = 0.33
 k_s = 1 ##  !!! dummy value ###
 E = 72.4e9 # GPA
 t = 2.5e-3    # m, design value
-b =  0.2    # m, short side of the plate, height of the spar
-a =   0.5    # m, distance between ribs
-aspect_ratio = a/b
+b_spar =  0.2 * wing.chord(b)    # m, short side of the plate, height of the spar
+a =   0.65    # m, distance between ribs
+aspect_ratio = a/b_spar
 
 k_s_values = [
     (1,   1.05,  15),
@@ -41,7 +49,7 @@ k_s = get_value(aspect_ratio)
 print(f"Aspect ratio: {aspect_ratio}")
 print(f"k_s: {k_s}")
 
-tau_crit = math.pi**2*k_s*E/(12*(1-poisson**2))*(t/b)**2
+tau_crit = math.pi**2*k_s*E/(12*(1-poisson**2))*(t/b_spar)**2
 
 print(tau_crit)
 
