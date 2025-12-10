@@ -28,3 +28,5 @@ tau_max_shear = k_v * tau_ave_shear
 Torque = 1000 #Nm, torque
 Area   = 0.3  #m^2, enclosed area of the wingbox
 q_shear_flow = Torque / (2*Area)
+
+k = 1.
