@@ -4,8 +4,8 @@ poisson = 0.33
 k_s = 1 ##  !!! dummy value ###
 E = 72.4e9 # GPA
 t = 2.5e-3    # m, design value
-b =  2.0    # m, short side of the plate, height of the spar
-a =   1.0     # m, distance between ribs
+b =  0.2    # m, short side of the plate, height of the spar
+a =   0.5    # m, distance between ribs
 aspect_ratio = a/b
 
 k_s_values = [
@@ -34,7 +34,7 @@ k_s_values = [
 
 def get_value(aspect_ratio):
     for low, high, val in k_s_values:
-        if low <= a < high:
+        if low <= aspect_ratio < high:
             return val
 
 k_s = get_value(aspect_ratio)
@@ -55,7 +55,3 @@ k_v =  1.2     # !!!!dummy value!!!
 
 tau_ave_shear = shear_force / (h_f*t_f + h_r*t_r)
 tau_max_shear = k_v * tau_ave_shear
-
-Torque = 1000 #Nm, torque
-Area   = 0.3  #m^2, enclosed area of the wingbox
-q_shear_flow = Torque / (2*Area)
