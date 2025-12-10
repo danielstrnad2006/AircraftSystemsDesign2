@@ -26,6 +26,7 @@ CENTROID_Y = []
 I_XX = []
 I_YY = []
 J_P = []
+Q = []
 
 def interp(object, location):
     y = np.arange(0, b / 2, db)
@@ -66,6 +67,8 @@ while b_cur < wing.b/2:
     I_XX.append(I_xx)
     I_YY.append(I_yy)
     J_P.append(J_p)
+
+    Q.append(cs.find_Q())
 
     cross_sections.append(cs)
 
