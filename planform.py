@@ -19,8 +19,10 @@ class WingSizing:
         self.taper_ratio = taper_ratio
         self.leading_sweep = leading_sweep
         self.quart_sweep = quart_sweep
-        self.trailing_sweep = None
         self.dihedral = dihedral
+        self.trailing_sweep = math.degrees(math.atan(math.tan(math.radians(self.quart_sweep)) + 3 *
+                                                     (self.c_root / (2 * self.b)) * (self.taper_ratio - 1)))  # [deg]
+
 
     # ---------------------------
     # Helper function
@@ -34,13 +36,11 @@ class WingSizing:
     def chord(self, y):
         return self.trailing_edge(y) - self.leading_edge(y)
 
+
     # ---------------------------
     # Plotting method
     # ---------------------------
     def plot(self, chord_position=0):
-
-        self.trailing_sweep = math.degrees(math.atan(math.tan(math.radians(self.quart_sweep)) + 3 *
-                                                     (self.c_root / (2 * self.b)) * (self.taper_ratio - 1)))  # [deg]
 
         y = np.linspace(0, self.b/2, 200)
         LE = np.array([self.leading_edge(yi) for yi in y])
