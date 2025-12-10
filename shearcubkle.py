@@ -38,8 +38,8 @@ def get_value(aspect_ratio):
             return val
 
 k_s = get_value(aspect_ratio)
-print(aspect_ratio)
-print(k_s)
+print(f"Aspect ratio: {aspect_ratio}")
+print(f"k_s: {k_s}")
 
 tau_crit = math.pi**2*k_s*E/(12*(1-poisson**2))*(t/b)**2
 
