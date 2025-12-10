@@ -274,6 +274,17 @@ class CrossSection:
 
         J = (4 * A**2)/ds_over_t
         return J
+
+    def find_Q(self, use_max_H=True):
+        if use_max_H:
+            h = max(self.h_spar1, self.h_spar2)
+        else:
+            h = np.average([self.h_spar1, self.h_spar2])
+        x = (self.xc_spar2 - self.xc_spar1) * self.chord
+
+
+
+        return
     
     def assembly_centroid_finder(self):
         # Length and angle of the upper skin
