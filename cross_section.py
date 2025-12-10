@@ -282,9 +282,14 @@ class CrossSection:
             h = np.average([self.h_spar1, self.h_spar2])
         x = (self.xc_spar2 - self.xc_spar1) * self.chord
 
+        Q = 0
 
+        # Assume rectangle
+        Q += h/2 * self.t_spar1 * h/4   # first spar
+        Q += h/2 * self.t_spar2 * h/4   # second spar
+        Q += self.t_skin_up * x * h/2   # top skin
 
-        return
+        return Q
     
     def assembly_centroid_finder(self):
         # Length and angle of the upper skin
