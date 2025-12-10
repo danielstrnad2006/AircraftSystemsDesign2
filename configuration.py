@@ -30,17 +30,29 @@ def interp(object, location):
 
 while b_cur < wing.b/2:
     stiffeners = [
-        (0.3, 'up', 40000, 10),
-        (0.3, 'down', 40000, 10),
-        (0.5, 'up', 40000, 10),
-        (0.5, 'down', 40000, 10),
+       (0.25, 'up', 90, 10),
+       (0.25, 'down', 90, 10),
+       (0.30, 'up', 90, 10),
+       (0.30, 'down', 90, 10),
+       (0.35, 'up', 90, 10),
+       (0.35, 'down', 90, 10),
+       (0.40, 'up', 90, 10),
+       (0.40, 'down', 90, 10),
+       (0.45, 'up', 90, 10),
+       (0.45, 'down', 90, 10),
+       (0.50, 'up', 90, 10),
+       (0.50, 'down', 90, 10),
+       (0.55, 'up', 90, 10),
+       (0.55, 'down', 90, 10),
+       (0.60, 'up', 90, 10),
+       (0.60, 'down', 90, 10),
     ]
 
     wing.plot(chord_position=b_cur)
 
-    cs = CrossSection(xc_spar1=0.2, xc_spar2=0.6, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
-                                t_spar1=5, t_spar2=5,
-                                t_skin_up=5, t_skin_down=5, stiffeners=stiffeners,
+    cs = CrossSection(xc_spar1=0.2, xc_spar2=0.65, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
+                                t_spar1=2.3, t_spar2=2.3,
+                                t_skin_up=2.3, t_skin_down=2.3, stiffeners=stiffeners,
                                 filepath="airfoils/NASA SC(2)-0414.dat", display_data=True)
 
     centroid_X, centroid_Y, I_xx, I_yy, J_p = cs.assembly_centroid_finder()
