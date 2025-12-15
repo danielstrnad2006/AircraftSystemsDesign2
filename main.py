@@ -32,8 +32,12 @@ with open("centroid_x.txt") as f:
     CENTROID_X = json.load(f)
 with open("j_p.txt") as f:
     J_P = json.load(f)
+with open("Q.txt") as f:
+    Q = json.load(f)
 
 internal_properties.set_torsion_params(db, CENTROID_X, J_P)
+internal_properties.set_buckling_params(db, Q, I_XX)
+
 if input("Start with detailed analysis of critical conditions? (y)")=="y":
     for cond in crit_conds:
         print(cond) 

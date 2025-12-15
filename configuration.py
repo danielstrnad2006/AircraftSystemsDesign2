@@ -67,7 +67,6 @@ while b_cur < wing.b/2:
     I_XX.append(I_xx)
     I_YY.append(I_yy)
     J_P.append(J_p)
-
     Q.append(cs.find_Q())
 
     cross_sections.append(cs)
@@ -114,3 +113,6 @@ with open("centroid_x.txt", "w") as f:
 
 with open("j_p.txt", "w") as f:
     json.dump(J_P, f)
+
+with open("Q.txt", "w") as f:
+    json.dump(Q, f)
