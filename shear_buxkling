@@ -1,0 +1,7 @@
+#shear buckling of spar webs
+#I will import this into the other file
+import numpy as np
+
+plate_apsect_ratio=1
+def tau_crit(k_s, E, t,b,v):
+    return np.pi**2*k_s*E*t**2/(12*(1-v**2)*b**2)

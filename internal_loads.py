@@ -157,6 +157,12 @@ class HalfWing:
         
         self.internal_torsion_noT = self.function_to_intrp1d(self.internal_torsion_noT)
         self.internal_torsion_fullT = self.function_to_intrp1d(self.internal_torsion_fullT)
+
+        self.sigma = lambda y: self.internal_bending(y) * self.y_max(y) / self.Q_buckling(y)
+
+        self.q_torsion_noT = lambda y: self.internal_torsion_noT(y) / (2 * self.G * self.J(y))
+        self.q_torsion_fullT = lambda y: self.internal_torsion_fullT(y) / (2 * self.G * self.J(y))
+        self.q_bending = lambda y: self.internal_bending(y) * self.Q_buckling(y) / (self.I_xx(y))
         
 
 
@@ -403,9 +409,10 @@ class HalfWing:
         J_arr = [el*1e-12 for el in J_arr_mm4]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
-    def set_buckling_params(self, db, Q_arr):
+    def set_buckling_params(self, db, Q_arr, I_xx_arr):
         y = np.arange(0, self.b / 2, db)
-        self.Q_buckling = sp.interpolate.interp1d(y, Q_arr, kind='cubic', fill_value="extrapolate")
+        self.Q_buckling = sp.interpolate.interp1d(y, Q_arr, kind='linear', fill_value="extrapolate")
+        self.I_xx = sp.interpolate.interp1d(y, I_xx_arr, kind='linear', fill_value="extrapolate")
         self.y_max = lambda y: 0.07 * self.chord(y)## Change when known!
         self.A_m = lambda y: self.johannes_fuel_constant * (self.chord(y)**2)
 
@@ -422,6 +429,18 @@ class HalfWing:
         #create a piecewise constant function based on avg_values
         piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='previous', fill_value="extrapolate")
         return piecewise_function
+    
+    def get_shear_at_ribs(self):
+        shear_values = []
+        for y_pos in self.ribs_locations:
+            shear_values.append(self.internal_shear(y_pos))
+        return shear_values
+    
+    def get_normal_stress_at_ribs(self):
+        normal_stress_values = []
+        #for y_pos in self.ribs_locations:
+            
+        return normal_stress_values
 
             
         
