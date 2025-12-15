@@ -411,7 +411,7 @@ class HalfWing:
         J_arr = [el*1e-12 for el in J_arr_mm4]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
-    def set_buckling_params(self, db, Q_arr, I_xx_arr, spar_thickness):
+    def set_buckling_params(self, db, Q_arr, I_xx_arr, spar_thickness, ribs_locations=None):
         y = np.arange(0, self.b / 2, db)
         self.Q_buckling = sp.interpolate.interp1d(y, Q_arr, kind='linear', fill_value="extrapolate")
         self.I_xx = sp.interpolate.interp1d(y, I_xx_arr, kind='linear', fill_value="extrapolate")
@@ -419,7 +419,8 @@ class HalfWing:
         self.A_m = lambda y: self.johannes_fuel_constant * (self.chord(y)**2)
         self.thickness_front_spar = spar_thickness[0]*1000 #m
         self.thickness_rear_spar = spar_thickness[1]*1000 #m
-        
+        self.ribs_locations = ribs_locations
+
     def function_ribs_discretization(self, function):
         avg_values = []
         for i in range(len(self.ribs_locations)-1):
