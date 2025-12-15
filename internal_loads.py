@@ -88,6 +88,8 @@ class HalfWing:
         self.CL_grad_total= float((0.962596-0.192557)/10)
         self.x_centroid_distance = 0
 
+        
+
         # Inertial forces:
         L = self.b / 2.0
         c_root = float(self.chord(0))
@@ -409,13 +411,15 @@ class HalfWing:
         J_arr = [el*1e-12 for el in J_arr_mm4]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
-    def set_buckling_params(self, db, Q_arr, I_xx_arr):
+    def set_buckling_params(self, db, Q_arr, I_xx_arr, spar_thickness):
         y = np.arange(0, self.b / 2, db)
         self.Q_buckling = sp.interpolate.interp1d(y, Q_arr, kind='linear', fill_value="extrapolate")
         self.I_xx = sp.interpolate.interp1d(y, I_xx_arr, kind='linear', fill_value="extrapolate")
         self.y_max = lambda y: 0.07 * self.chord(y)## Change when known!
         self.A_m = lambda y: self.johannes_fuel_constant * (self.chord(y)**2)
-
+        self.thickness_front_spar = spar_thickness[0]*1000 #m
+        self.thickness_rear_spar = spar_thickness[1]*1000 #m
+        
     def function_ribs_discretization(self, function):
         avg_values = []
         for i in range(len(self.ribs_locations)-1):
@@ -430,18 +434,39 @@ class HalfWing:
         piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='previous', fill_value="extrapolate")
         return piecewise_function
     
-    def get_shear_at_ribs(self):
-        shear_values = []
+    def get_shear_at_sections(self):
+        tau_front_spar_noT = []
+        tau_rear_spar_noT = []
+        tau_front_spar_fullT = []
+        tau_rear_spar_fullT = []
+        shear_values_sections = []
         for y_pos in self.ribs_locations:
-            shear_values.append(self.internal_shear(y_pos))
-        return shear_values
-    
-    def get_normal_stress_at_ribs(self):
-        normal_stress_values = []
-        #for y_pos in self.ribs_locations:
-            
-        return normal_stress_values
+            tau_front_spar_noT.append(self.q_bending(y_pos) + self.q_torsion_noT(y_pos))/self.thickness_front_spar
+            tau_rear_spar_noT.append(self.q_bending(y_pos) + self.q_torsion_noT(y_pos))/self.thickness_rear_spar
+            tau_front_spar_fullT.append(self.q_bending(y_pos) + self.q_torsion_fullT(y_pos))/self.thickness_front_spar
+            tau_rear_spar_fullT.append(self.q_bending(y_pos) + self.q_torsion_fullT(y_pos))/self.thickness_rear_spar
 
+        for i in range(len(self.ribs_locations)-1):
+            shear_values_sections.append(max(
+                np.abs(tau_front_spar_noT[i]),
+                np.abs(tau_rear_spar_noT[i]),
+                np.abs(tau_front_spar_fullT[i]),
+                np.abs(tau_rear_spar_fullT[i]),
+                np.abs(tau_front_spar_noT[i+1]),
+                np.abs(tau_rear_spar_noT[i+1]),
+                np.abs(tau_front_spar_fullT[i+1]),
+                np.abs(tau_rear_spar_fullT[i+1])
+            ))
+        return shear_values_sections
+    
+    def get_normal_stress_at_sections(self):
+        normal_stress_values_ribs = []
+        normal_stress_values_sections = []
+        for y_pos in self.ribs_locations:
+            normal_stress_values_ribs.append(self.sigma(y_pos))
+        for i in range(len(normal_stress_values_ribs)-1):
+            normal_stress_values_sections.append(max(normal_stress_values_ribs[i], normal_stress_values_ribs[i+1]))
+        return normal_stress_values_sections
             
         
 
