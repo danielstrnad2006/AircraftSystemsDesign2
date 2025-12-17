@@ -134,6 +134,5 @@ k_v =  1.2     # !!!!dummy value!!!
 
 tau_ave_shear = shear_force / (h_f*t_f + h_r*t_r)
 tau_max_shear = k_v * tau_ave_shear
-
 print("tau average shear:", tau_ave_shear)
 print("tau max. shear:", tau_max_shear)
