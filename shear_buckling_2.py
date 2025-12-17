@@ -103,7 +103,7 @@ def shear_buckling_along(rib_loc, shear_stresses, thicknesses):
     output=[]
     poisson2 = 0.33
     E_mod = 72.4*10**9
-    for i in range(len(rib)-1):
+    for i in range(len(ribs)-1):
         length=rib_loc[i+1]-rib_loc[i]
         b_spar =  0.14 * wing.chord(rib_loc[i])  #conservative assumption, takes the chord length at that location
         aspect_ratio = length/b_spar
