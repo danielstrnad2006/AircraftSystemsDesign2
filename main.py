@@ -76,8 +76,10 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
 
 
         sigma_lst = internal_properties.get_normal_stress_at_sections()
-        print("List of maximum shear stresses along the span in MPa:", [tau/1e6 for tau in sigma_lst])
+        
         tau_lst = internal_properties.get_shear_at_sections()
+
+        print("List of maximum shear stresses along the span in MPa:", [tau/1e6 for tau in tau_lst])
         print("List of maximum normal stresses along the span in MPa:", [sigma/1e6 for sigma in sigma_lst])
 
 

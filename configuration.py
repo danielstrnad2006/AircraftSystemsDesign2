@@ -55,10 +55,10 @@ while b_cur < wing.b/2:
     if PLOT:
         wing.plot(chord_position=b_cur)
 
-    t_spar1 = 2.3
-    t_spar2 = 2.3
-    t_skin_up = 2.3
-    t_skin_down = 2.3
+    t_spar1 = 6
+    t_spar2 = 6
+    t_skin_up = 6
+    t_skin_down = 6
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.65, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
                                 t_spar1=t_spar1, t_spar2=t_spar2,
                                 t_skin_up=t_skin_up, t_skin_down=t_skin_down, stiffeners=stiffeners,
