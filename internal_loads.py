@@ -168,6 +168,8 @@ class HalfWing:
         self.q_torsion_noT = lambda y: self.internal_torsion_noT(y) / (2 * self.G * self.J(y))
         self.q_torsion_fullT = lambda y: self.internal_torsion_fullT(y) / (2 * self.G * self.J(y))
         self.q_bending = lambda y: self.internal_bending(y) * self.Q_buckling(y) / (self.I_xx(y))
+        print(self.q_bending(0) + self.q_torsion_fullT(0) + self.q_torsion_noT(0))
+        print(self.q_bending(16.0816) + self.q_torsion_fullT(16.0816) + self.q_torsion_noT(16.0816))
         
 
 
@@ -437,7 +439,7 @@ class HalfWing:
             #store avg_value for this segment
             avg_values.append(avg_value)
         #create a piecewise constant function based on avg_values
-        piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='next', fill_value="extrapolate")
+        piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='previous', fill_value="extrapolate")
         return piecewise_function
     
     def get_shear_at_sections(self):
@@ -447,10 +449,10 @@ class HalfWing:
         tau_rear_spar_fullT = []
         shear_values_sections = []
         for y_pos in self.ribs_locations:
-            tau_front_spar_noT.append(self.q_bending(y_pos) + self.q_torsion_noT(y_pos))/self.thickness_front_spar
-            tau_rear_spar_noT.append(self.q_bending(y_pos) + self.q_torsion_noT(y_pos))/self.thickness_rear_spar
-            tau_front_spar_fullT.append(self.q_bending(y_pos) + self.q_torsion_fullT(y_pos))/self.thickness_front_spar
-            tau_rear_spar_fullT.append(self.q_bending(y_pos) + self.q_torsion_fullT(y_pos))/self.thickness_rear_spar
+            tau_front_spar_noT.append((self.q_bending(y_pos) + self.q_torsion_noT(y_pos))/self.thickness_front_spar)
+            tau_rear_spar_noT.append((self.q_bending(y_pos) + self.q_torsion_noT(y_pos))/self.thickness_rear_spar)
+            tau_front_spar_fullT.append((self.q_bending(y_pos) + self.q_torsion_fullT(y_pos))/self.thickness_front_spar)
+            tau_rear_spar_fullT.append((self.q_bending(y_pos) + self.q_torsion_fullT(y_pos))/self.thickness_rear_spar)
 
         for i in range(len(self.ribs_locations)-1):
             shear_values_sections.append(max(

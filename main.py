@@ -54,7 +54,7 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
         internal_properties.get_internal_plot()
         internal_properties.get_debugging_torsion_plot()
         internal_properties.get_internal_torsion_plot()
-        internal_properties.torque_plot()
+        #internal_properties.torque_plot()
 
         
 
@@ -63,11 +63,7 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
         moment_distribution = internal_properties.internal_bending
         torsion_noT_distribution = internal_properties.internal_torsion_noT
         torsion_fullT_distribution = internal_properties.internal_torsion_fullT
-        sigma_lst = internal_properties.get_normal_stress_at_sections()
-        print("List of maximum shear stresses along the span in MPa:", [tau/1e6 for tau in sigma_lst])
-        tau_lst = internal_properties.get_shear_at_sections()
-        print("List of maximum normal stresses along the span in MPa:", [sigma/1e6 for sigma in sigma_lst])
-
+       
         #PLOT BEAM DEFLECTION
         beam = BeamDeflection(b, db, moment_distrib=moment_distribution)
         beam.assignI_XX(I_XX)
@@ -79,7 +75,11 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
         plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)
 
 
-        
+        sigma_lst = internal_properties.get_normal_stress_at_sections()
+        print("List of maximum shear stresses along the span in MPa:", [tau/1e6 for tau in sigma_lst])
+        tau_lst = internal_properties.get_shear_at_sections()
+        print("List of maximum normal stresses along the span in MPa:", [sigma/1e6 for sigma in sigma_lst])
+
 
         max_v, max_y = beam.max_deflection()
         print(f"Maximum deflection: {max_v:.6f} at y = {max_y:.3f}")
