@@ -124,7 +124,7 @@ class HalfWing:
         self.Lift = lambda y: 0.5 * self.rho * self.velocity**2 * self.chord(y) * self.get_Cl(y)   #up positive lift
         self.Drag = lambda y: np.abs(self.Lift(y)*np.sin(np.deg2rad(Ai_case(y))))
         self.aerodynamic_normal = lambda y: np.cos(np.deg2rad(self.aoa))*self.Lift(y) + np.sin(np.deg2rad(self.aoa))*self.Drag(y)
-        self.aerodynamic_normal = self.function_ribs_discretization(self.aerodynamic_normal)
+        self.aerodynamic_normal = self.aerodynamic_normal
         # quick check: integrate to get total lift on the half wing
         #self.total_lift_half, _ = sp.integrate.quad(self.Lift, 0, self.b / 2)
         #print("Total lift is: ",2*self.total_lift_half,"[N]")
@@ -134,12 +134,14 @@ class HalfWing:
 
         self.reaction_shear = -(self.integrate_halfspan(cont_normal_force)(self.b/2))
 
+        
+
         self.integral_of_normal_force = lambda y: self.integrate_halfspan(cont_normal_force)(y)
 
         self.thrust = self.engine_TO_thrust*(self.rho/1.225) #*(1-self.velocity/400) #assuming effective exhaust velocity of 400 m/s
 
         self.internal_shear = lambda y: -self.integral_of_normal_force(y) + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_shear 
-        self.internal_shear = self.function_to_intrp1d(self.internal_shear)
+        self.internal_shear = self.function_ribs_discretization(self.internal_shear) 
         #self.internal_shear = lambda y: -sp.integrate.quad(cont_normal_force, 0, y)[0] + (self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - reaction_shear
         self.reaction_bending = self.integrate_halfspan(self.internal_shear)(self.b/2)
 
@@ -148,7 +150,7 @@ class HalfWing:
 
 
         self.torsion_distribtuion =  lambda y:  (self.x_centroid_distance(y)-self.x_cp_distance(y))*self.aerodynamic_normal(y)
-
+        
 
         #print(self.thrust)
         #print(self.thrust/self.engine_TO_thrust*100)
@@ -157,8 +159,9 @@ class HalfWing:
         self.internal_torsion_noT = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - (self.x_centroid_distance(self.y_engine)*self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) - self.reaction_torsion
         self.internal_torsion_fullT = lambda y: self.integrate_halfspan(self.torsion_distribtuion)(y) - (self.x_centroid_distance(self.y_engine)*self.g * self.g_loading * self.m_engine_and_nacelle if y < self.y_engine else 0) + ((self.throttle_percentage/100)*self.thrust*self.engine_z_pos if y < self.y_engine else 0)- self.reaction_torsion
         
-        self.internal_torsion_noT = self.function_to_intrp1d(self.internal_torsion_noT)
-        self.internal_torsion_fullT = self.function_to_intrp1d(self.internal_torsion_fullT)
+        self.internal_torsion_noT = self.function_ribs_discretization(self.internal_torsion_noT)
+        self.internal_torsion_fullT = self.function_ribs_discretization(self.internal_torsion_fullT)
+        
 
         self.sigma = lambda y: self.internal_bending(y) * self.y_max(y) / self.Q_buckling(y)
 
@@ -411,14 +414,16 @@ class HalfWing:
         J_arr = [el*1e-12 for el in J_arr_mm4]
         self.J = sp.interpolate.interp1d(y, J_arr, kind='cubic', fill_value="extrapolate")
 
-    def set_buckling_params(self, db, Q_arr, I_xx_arr, spar_thickness, ribs_locations=None):
+    def set_buckling_params(self, db, Q_arr_mm, I_xx_arr_mm, spar_thickness, ribs_locations=None):
         y = np.arange(0, self.b / 2, db)
+        Q_arr = [el*1e-9 for el in Q_arr_mm]
+        I_xx_arr = [el*1e-12 for el in I_xx_arr_mm]
         self.Q_buckling = sp.interpolate.interp1d(y, Q_arr, kind='linear', fill_value="extrapolate")
         self.I_xx = sp.interpolate.interp1d(y, I_xx_arr, kind='linear', fill_value="extrapolate")
-        self.y_max = lambda y: 0.07 * self.chord(y)## Change when known!
+        self.y_max = lambda y: 0.0637 * self.chord(y)## Change when known!
         self.A_m = lambda y: self.johannes_fuel_constant * (self.chord(y)**2)
-        self.thickness_front_spar = spar_thickness[0]*1000 #m
-        self.thickness_rear_spar = spar_thickness[1]*1000 #m
+        self.thickness_front_spar = spar_thickness[0]*1e-3 #m
+        self.thickness_rear_spar = spar_thickness[1]*1e-3 #m
         self.ribs_locations = ribs_locations
 
     def function_ribs_discretization(self, function):
@@ -432,7 +437,7 @@ class HalfWing:
             #store avg_value for this segment
             avg_values.append(avg_value)
         #create a piecewise constant function based on avg_values
-        piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='previous', fill_value="extrapolate")
+        piecewise_function = sp.interpolate.interp1d(self.ribs_locations[:-1], avg_values, kind='next', fill_value="extrapolate")
         return piecewise_function
     
     def get_shear_at_sections(self):
