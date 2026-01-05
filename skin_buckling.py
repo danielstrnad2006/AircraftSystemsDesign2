@@ -6,7 +6,7 @@ from planform import *
 
 
 
-def Skin_buckling(ribs, normal_stresses, thickness_input):
+def Skin_buckling(ribs, normal_stresses, thickness_input, n_stringers):
     span = 32.1632
     poisson = 0.33
     E = 72.4e9
@@ -53,7 +53,7 @@ def Skin_buckling(ribs, normal_stresses, thickness_input):
         else:
             a=ribs[i+1]-ribs[i]
 
-        b = (c_root - (2*(c_root - c_tip)/span) * ribs[i+1])*0.45
+        b = (c_root - (2*(c_root - c_tip)/span) * ribs[i+1])*0.45/(n_stringers+1)  #approximate width between stringers
 
         kc_ratio = a/b
 
