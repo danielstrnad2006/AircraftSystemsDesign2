@@ -9,6 +9,7 @@ from Daniel_test_Torsion_Deflection import TorsionDeflection, plotTwists
 
 import math
 import numpy as np
+import scipy as sp
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 from cross_section import * 
@@ -17,6 +18,7 @@ from planform import *
 import json
 
 from Stach_tries_Shear_buckling import Shear_buckling
+from column_buckling import Column_buckling
 
 db = 0.5
 b = 32.1632
@@ -40,19 +42,22 @@ with open("Q.txt") as f:
     Q = json.load(f)
 with open("spar_thickness.txt") as f:
     spar_thickness = json.load(f)
+with open("stiffeners_areas.txt") as f:
+    stiffeners_areas = json.load(f)
 
 internal_properties.set_torsion_params(db, CENTROID_X, J_P)
 internal_properties.set_buckling_params(db, Q, I_XX, spar_thickness=spar_thickness, ribs_locations = ribs_locations)
+compressive_yield_strength = 4e8 #Pa
 
 if input("Start with detailed analysis of critical conditions? (y)")=="y":
     for cond in crit_conds:
         print(cond) 
         print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3, fuel percentage of:", cond[4], "%")
         internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
-        internal_properties.get_coefficient_plots()
-        internal_properties.get_forces_plot()
+        #internal_properties.get_coefficient_plots()
+        #internal_properties.get_forces_plot()
         internal_properties.get_internal_plot()
-        internal_properties.get_debugging_torsion_plot()
+        #internal_properties.get_debugging_torsion_plot()
         internal_properties.get_internal_torsion_plot()
         #internal_properties.torque_plot()
 
@@ -76,11 +81,11 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
 
 
         sigma_lst = internal_properties.get_normal_stress_at_sections()
-        
+        sigma_interp1d = sp.interpolate.interp1d(ribs_locations[:-1], sigma_lst, kind='previous', bounds_error=False, fill_value=(sigma_lst[0], sigma_lst[-1]))
         tau_lst = internal_properties.get_shear_at_sections()
 
-        print("List of maximum shear stresses along the span in MPa:", [tau/1e6 for tau in tau_lst])
-        print("List of maximum normal stresses along the span in MPa:", [sigma/1e6 for sigma in sigma_lst])
+        print("List of maximum shear stresses along the span in MPa:", [int(tau/1e6) for tau in tau_lst])
+        print("List of maximum normal stresses along the span in MPa:", [int(sigma/1e6) for sigma in sigma_lst])
 
 
         max_v, max_y = beam.max_deflection()
@@ -88,8 +93,26 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
 
         ### Buckling Analysis ###
         shear_buckling_safety = Shear_buckling(ribs_locations, [tau/1e6 for tau in tau_lst], spar_thickness[0])
-        print("Shear buckling safety factors along the span:", shear_buckling_safety)
-        input("Press Enter to continue to deflection results...")
+        
+        shear_buckling_safety_interp1d = sp.interpolate.interp1d(ribs_locations[:-1], shear_buckling_safety, kind='previous', bounds_error=False, fill_value=(shear_buckling_safety[0], shear_buckling_safety[-1]))
+        column_buckling_safety_interp1d = Column_buckling(ribs_locations, [sigma/1e6 for sigma in sigma_lst], stringer_areas_input=stiffeners_areas)
+    
+        input("Press Enter to continue to graphing of Margins of Safety...") 
+        x_plot = np.linspace(0, b/2, 300)
+        shear_buckling_safety_func = shear_buckling_safety_interp1d(x_plot)
+        compressive_stress_safety_func = compressive_yield_strength/sigma_interp1d(x_plot)
+        
+        plt.plot(x_plot, shear_buckling_safety_func, label="Shear Buckling Margin Of Safety")
+        plt.plot(x_plot, column_buckling_safety_interp1d(x_plot), label="Column Buckling Margin Of Safety")
+        plt.plot(x_plot, compressive_stress_safety_func, label="Compressive Yielding Margin Of Safety")
+        plt.ylim(0, 21)
+        plt.xlabel("Spanwise location y [m]")
+        plt.ylabel("Margin Of Safety[-]")
+        plt.grid(True)
+        plt.hlines(y=1, color='r', linestyle='--', label="Failure Threshold", xmin=0, xmax=b/2)
+        plt.title("Margin Of Safety Along Span for different Failure Modes")
+        plt.legend()
+        plt.show()
 
 
 

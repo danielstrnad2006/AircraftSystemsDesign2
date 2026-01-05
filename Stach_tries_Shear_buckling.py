@@ -4,9 +4,9 @@ import scipy as sp
 
 def Shear_buckling(ribs_input_lst, shear_stresses_input_lst, thicknesses_input):
 
-    ribs= ribs_input_lst  #rib locations along span of beam
+    ribs= ribs_input_lst[:-1]  #rib locations along span of beam
     shear_stresses= shear_stresses_input_lst  #maximum shear stress along that section between the ribs MPA
-    thicknesses= [thicknesses_input*1e-3] * (len(ribs)+1) #metres
+    thicknesses= [thicknesses_input*1e-3] * (len(ribs)) #metres
 
     wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
                     leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
@@ -73,19 +73,19 @@ def Shear_buckling(ribs_input_lst, shear_stresses_input_lst, thicknesses_input):
     ##input all of this to find the graphs for safety buckling 
 
 
-    safety_Factor=1.2
-    count=50
-    tolerance=0.05
-    for _ in range(count):
-        values, useless = shear_buckling_along(ribs, shear_stresses, thicknesses)
-
-        for k, MS in enumerate(values):
-
-            if MS > safety_Factor + tolerance:
-                thicknesses[k] -= 0.001
-            elif MS < safety_Factor:
-                thicknesses[k] += 0.001
+    #safety_Factor=1.2
+    #count=50
+    #tolerance=0.05
+    #for _ in range(count):
+    #    values, useless = shear_buckling_along(ribs, shear_stresses, thicknesses)
+#
+    #    for k, MS in enumerate(values):
+#
+    #        if MS > safety_Factor + tolerance:
+    #            thicknesses[k] -= 0.001
+    #        elif MS < safety_Factor:
+    #            thicknesses[k] += 0.001
 
     
-    return shear_buckling_along(ribs, shear_stresses, thicknesses)
+    return shear_buckling_along(ribs, shear_stresses, thicknesses)[0]
 

@@ -473,7 +473,7 @@ class HalfWing:
         for y_pos in self.ribs_locations:
             normal_stress_values_ribs.append(self.sigma(y_pos))
         for i in range(len(normal_stress_values_ribs)-1):
-            normal_stress_values_sections.append(max(normal_stress_values_ribs[i], normal_stress_values_ribs[i+1]))
+            normal_stress_values_sections.append(max(abs(normal_stress_values_ribs[i]), abs(normal_stress_values_ribs[i+1])))
         return normal_stress_values_sections
             
         
