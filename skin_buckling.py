@@ -3,20 +3,24 @@ import matplotlib.pyplot as plt
 from planform import *
 
 
-def Skin_buckling():
+
+
+
+def Skin_buckling(ribs, normal_stresses):
     span = 32.1632
     poisson = 0.33
     E = 72.4e9
     ds = 0
 
     sigma_cr_tab = []
+    safety_tab = []
     ds_tab = []
     t = 2.5e-3 #[m]
 
     wing = WingSizing(S_w=149.9, b=span, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
                     leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
 
-    ribs = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,wing.b/2]
+
     def skin_buckling(b, kc):
         sigma_cr = ((((math.pi**2)*kc*E)/(12*(1-(poisson**2))))*((t/b)**2))/10**6
         return sigma_cr
@@ -38,32 +42,38 @@ def Skin_buckling():
     print(f"c_tip: {c_tip}")    
 
     i = 0
-    for i in range(len(ribs)):
+    for i in range(len(ribs)-1):
 
         if i == len(ribs) - 1:
             a=wing.b/2-ribs[-1]
         else:
             a=ribs[i+1]-ribs[i]
 
-        b = (c_root - (2*(c_root - c_tip)/span) * ribs[i])*0.45
+        b = (c_root - (2*(c_root - c_tip)/span) * ribs[i+1])*0.45
 
         kc_ratio = a/b
 
         kc_values = [
-            (0.3, 0.4, 20),
-            (0.4, 0.5, 18),
-            (0.5, 0.6, 16),
-            (0.6, 0.7, 14),
-            (0.7, 0.8, 12),
-            (0.8, 0.9, 11),
-            (0.9, 1.0, 10.2),
-            (1.0, 1.1, 10.2),
-            (1.1, 1.2, 10.2),
-            (1.2, 1.3, 9.5),
-            (1.3, 1.4, 9),
-            (1.4, 1.5, 8.6),
-            (1.5, 1.6, 8.3),
-            (1.6, 1.7, 8.2),
+            (0.7, 0.8, 15.1),
+            (0.8, 0.9, 13.5),
+            (0.9, 1.0, 11.9),
+            (1.0, 1.1, 10.3),
+            (1.1, 1.15, 10.4),
+            (1.15, 1.2, 10.5),
+            (1.2, 1.3, 9.85),
+            (1.3, 1.4, ),
+            (1.4, 1.5, ),
+            (1.5, 1.6, ),
+            (1.6, 1.7, ),
+            (1.7, 1.8, ),
+            (1.8, 1.9, ),
+            (1.9, 2, ),
+            (2, 2.1, ),       
+            (2.1, 2.2, ),
+            (2.2, 2.3, ),
+            (2.3, 2.4, ),
+            (2.4, 2.5, ),  
+            (2.5, 2.6, ),                                
         ]
 
         def get_value(kc_ratio):
@@ -78,24 +88,19 @@ def Skin_buckling():
                         
         kc = float(get_value(kc_ratio))
 
-        print(f"ribs[i]: {ribs[i]}")
+        print(f"From {ribs[i]} to {ribs[i+1]}")
         print(f"delta_a: {a}")
         print(f"chord/b: {b}")
         print(f"kc_ratio: {kc_ratio}")
         print(f"kc: {kc}")    
 
         sigma_cr = skin_buckling(b, kc)
+        safety_factor = safety_margin(normal_stresses, sigma_cr)
 
         ds = float(ribs[i])
 
         sigma_cr_tab.append(sigma_cr)
+
+        safety_tab.append(safety_factor)
         ds_tab.append(ds)
-
-    return ()
-    plt.scatter(ds_tab, sigma_cr_tab)
-
-    plt.title('Skin critical buckling stress over the wing span')
-    plt.xlabel('Wing Span [m]')
-    plt.ylabel('Critical Buckling Stress [MPa]')
-
-    plt.show()
+    return sigma_cr_tab, safety_tab
