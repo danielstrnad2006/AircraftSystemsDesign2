@@ -9,6 +9,7 @@ from Daniel_test_Torsion_Deflection import TorsionDeflection, plotTwists
 
 import math
 import numpy as np
+import scipy as sp
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 from cross_section import * 
@@ -16,7 +17,8 @@ from cross_section import *
 from planform import *
 import json
 
-from Stach_tries_Shear_buckling import shear_buckling_along as StachShearBuckling
+from Stach_tries_Shear_buckling import Shear_buckling
+from column_buckling import Column_buckling
 
 db = 0.5
 b = 32.1632
@@ -40,19 +42,22 @@ with open("Q.txt") as f:
     Q = json.load(f)
 with open("spar_thickness.txt") as f:
     spar_thickness = json.load(f)
+with open("stiffeners_areas.txt") as f:
+    stiffeners_areas = json.load(f)
 
 internal_properties.set_torsion_params(db, CENTROID_X, J_P)
 internal_properties.set_buckling_params(db, Q, I_XX, spar_thickness=spar_thickness, ribs_locations = ribs_locations)
+compressive_yield_strength = 4e8 #Pa
 
 if input("Start with detailed analysis of critical conditions? (y)")=="y":
     for cond in crit_conds:
         print(cond) 
         print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3, fuel percentage of:", cond[4], "%")
         internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
-        internal_properties.get_coefficient_plots()
-        internal_properties.get_forces_plot()
+        #internal_properties.get_coefficient_plots()
+        #internal_properties.get_forces_plot()
         internal_properties.get_internal_plot()
-        internal_properties.get_debugging_torsion_plot()
+        #internal_properties.get_debugging_torsion_plot()
         internal_properties.get_internal_torsion_plot()
         #internal_properties.torque_plot()
 
@@ -76,96 +81,123 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
 
 
         sigma_lst = internal_properties.get_normal_stress_at_sections()
-        
+        sigma_interp1d = sp.interpolate.interp1d(ribs_locations[:-1], sigma_lst, kind='previous', bounds_error=False, fill_value=(sigma_lst[0], sigma_lst[-1]))
         tau_lst = internal_properties.get_shear_at_sections()
 
-        print("List of maximum shear stresses along the span in MPa:", [tau/1e6 for tau in tau_lst])
-        print("List of maximum normal stresses along the span in MPa:", [sigma/1e6 for sigma in sigma_lst])
+        print("List of maximum shear stresses along the span in MPa:", [int(tau/1e6) for tau in tau_lst])
+        print("List of maximum normal stresses along the span in MPa:", [int(sigma/1e6) for sigma in sigma_lst])
 
 
         max_v, max_y = beam.max_deflection()
-        print(f"Maximum deflection: {max_v:.6f} at y = {max_y:.3f}")
+        print(f"Maximum deflection: {max_v:.6f} meters at y = {max_y:.3f} meters")
+
+        ### Buckling Analysis ###
+        shear_buckling_safety = Shear_buckling(ribs_locations, [tau/1e6 for tau in tau_lst], spar_thickness[0])
+        
+        shear_buckling_safety_interp1d = sp.interpolate.interp1d(ribs_locations[:-1], shear_buckling_safety, kind='previous', bounds_error=False, fill_value=(shear_buckling_safety[0], shear_buckling_safety[-1]))
+        column_buckling_safety_interp1d = Column_buckling(ribs_locations, [sigma/1e6 for sigma in sigma_lst], stringer_areas_input=stiffeners_areas)
+    
+        input("Press Enter to continue to graphing of Margins of Safety...") 
+        x_plot = np.linspace(0, b/2, 300)
+        shear_buckling_safety_func = shear_buckling_safety_interp1d(x_plot)
+        compressive_stress_safety_func = compressive_yield_strength/sigma_interp1d(x_plot)
+        
+        plt.plot(x_plot, shear_buckling_safety_func, label="Shear Buckling Margin Of Safety")
+        plt.plot(x_plot, column_buckling_safety_interp1d(x_plot), label="Column Buckling Margin Of Safety")
+        plt.plot(x_plot, compressive_stress_safety_func, label="Compressive Yielding Margin Of Safety")
+        plt.ylim(0, 21)
+        plt.xlabel("Spanwise location y [m]")
+        plt.ylabel("Margin Of Safety[-]")
+        plt.grid(True)
+        plt.hlines(y=1, color='r', linestyle='--', label="Failure Threshold", xmin=0, xmax=b/2)
+        plt.title("Margin Of Safety Along Span for different Failure Modes")
+        plt.legend()
+        plt.show()
 
 
-if input("Is the final cross section chosen and do you want to proceed to verify deflection at all loading conditions? (y)")=="y":
-    crit_conds = [
-    [2.5, 103544, 138.0, 0.433, 100],   # LC-1 MTOW FL310
-    [2.5,  62767, 107.5, 0.433,   0],   # LC-2 ZFW  FL310
-    [2.5,  43807,  89.8, 0.433,   0],   # LC-3 OEW  FL310
-
-    [2.5, 103544, 138.0, 1.225, 100],   # LC-4 MTOW FL0
-    [2.5,  62767, 107.5, 1.225,   0],   # LC-5 ZFW  FL0
-    [2.5,  43807,  89.8, 1.225,   0],   # LC-6 OEW  FL0
 
 
-    # --- Negative manoeuvring @ VS1 ---
-    [-1, 103544,  87.3, 0.433, 100],    # LC-7 MTOW FL310
-    [-1,  62767,  67.7, 0.433,   0],    # LC-8 ZFW  FL310
-    [-1,  43807,  56.8, 0.433,   0],    # LC-9 OEW  FL310
 
-    [-1, 103544,  87.3, 1.225, 100],    # LC-10 MTOW FL0
-    [-1,  62767,  67.7, 1.225,   0],    # LC-11 ZFW  FL0
-    [-1,  43807,  56.8, 1.225,   0],    # LC-12 OEW  FL0
-
-
-    # --- Positive manoeuvring @ VD ---
-    [2.5, 103544, 163.0, 0.433, 100],   # LC-13 MTOW FL310
-    [2.5,  62767, 163.0, 0.433,   0],   # LC-14 ZFW  FL310
-    [2.5,  43807, 163.0, 0.433,   0],   # LC-15 OEW  FL310
-
-    [2.5, 103544, 308.7, 1.225, 100],   # LC-16 MTOW FL0
-    [2.5,  62767, 308.7, 1.225,   0],   # LC-17 ZFW  FL0
-    [2.5,  43807, 308.7, 1.225,   0],   # LC-18 OEW  FL0
-
-
-    # --- Positive manoeuvring @ VC ---
-    [2.5, 103544, 154.0, 0.433, 100],   # LC-19 MTOW FL310
-    [2.5,  62767, 154.0, 0.433,   0],   # LC-20 ZFW  FL310
-    [2.5,  43807, 154.0, 0.433,   0],   # LC-21 OEW  FL310
-
-    [2.5, 103544, 154.0, 1.225, 100],   # LC-22 MTOW FL0
-    [2.5,  62767, 154.0, 1.225,   0],   # LC-23 ZFW  FL0
-    [2.5,  43807, 154.0, 1.225,   0]    # LC-24 OEW  FL0
-    ]
-    twist_tip_lst = []
-    deflection_tip_lst = []
-
-    for cond in crit_conds:
-        print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
-        internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
-        #internal_properties.get_internal_plot()
-        #internal_properties.get_internal_torsion_plot()
-
-        #twist_plot(internal_properties, CENTROID_X, J_P, b, db)
-        moment_distribution = internal_properties.internal_bending
-        torsion_noT_distribution = internal_properties.internal_torsion_noT
-        torsion_fullT_distribution = internal_properties.internal_torsion_fullT
-
-        #PLOT BEAM DEFLECTION
-        beam = BeamDeflection(b, db, moment_distrib=moment_distribution)
-        beam.assignI_XX(I_XX)
-        #beam.plot()
-
-        #PLOT BEAM TWIST
-        beam_twist_noT = TorsionDeflection(b, db, torsion_distrib=torsion_noT_distribution, J_distrib=internal_properties.J)
-        beam_twist_fullT = TorsionDeflection(b, db, torsion_distrib=torsion_fullT_distribution, J_distrib=internal_properties.J)
-        #plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)
-        print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
-        print("The Reaction Shear Force is:", internal_properties.internal_shear(0))
-        print("The Reaction Bending Moment is:", internal_properties.internal_bending(0))
-        print("The Reaction Torsion Moment at full throttle is:", internal_properties.internal_torsion_fullT(0))
-        print("The Reaction Torsion Moment at zero throttle is:", internal_properties.internal_torsion_noT(0))
-        print()
-        print("The tip deflection is:", beam.v(16.0816)* 1e15, "mm")
-        deflection_tip_lst.append(beam.v(16.0816)* 1e12)
-        print("The tip twist (zero T) is:", beam_twist_noT.theta(16.0816)*180/np.pi, "deg")
-        print("The tip twist (full T) is:", beam_twist_fullT.theta(16.0816)*180/np.pi, "deg")
-        if beam_twist_fullT.theta(16.0816)>0:
-            twist_tip_lst.append(max(beam_twist_fullT.theta(16.0816)*180/np.pi, beam_twist_noT.theta(16.0816)*180/np.pi))
-        else: 
-            twist_tip_lst.append(min(beam_twist_noT.theta(16.0816)*180/np.pi, beam_twist_fullT.theta(16.0816)*180/np.pi))
-        print("-----------------------------------------------------")
-        print()
-        print()
-    print("The tip deflections for all loading conditions in m are:", deflection_tip_lst)
-    print("The tip twists for all loading conditions in deg are:", twist_tip_lst)
+#if input("Is the final cross section chosen and do you want to proceed to verify deflection at all loading conditions? (y)")=="y":
+#    crit_conds = [
+#    [2.5, 103544, 138.0, 0.433, 100],   # LC-1 MTOW FL310
+#    [2.5,  62767, 107.5, 0.433,   0],   # LC-2 ZFW  FL310
+#    [2.5,  43807,  89.8, 0.433,   0],   # LC-3 OEW  FL310
+#
+#    [2.5, 103544, 138.0, 1.225, 100],   # LC-4 MTOW FL0
+#    [2.5,  62767, 107.5, 1.225,   0],   # LC-5 ZFW  FL0
+#    [2.5,  43807,  89.8, 1.225,   0],   # LC-6 OEW  FL0
+#
+#
+#    # --- Negative manoeuvring @ VS1 ---
+#    [-1, 103544,  87.3, 0.433, 100],    # LC-7 MTOW FL310
+#    [-1,  62767,  67.7, 0.433,   0],    # LC-8 ZFW  FL310
+#    [-1,  43807,  56.8, 0.433,   0],    # LC-9 OEW  FL310
+#
+#    [-1, 103544,  87.3, 1.225, 100],    # LC-10 MTOW FL0
+#    [-1,  62767,  67.7, 1.225,   0],    # LC-11 ZFW  FL0
+#    [-1,  43807,  56.8, 1.225,   0],    # LC-12 OEW  FL0
+#
+#
+#    # --- Positive manoeuvring @ VD ---
+#    [2.5, 103544, 163.0, 0.433, 100],   # LC-13 MTOW FL310
+#    [2.5,  62767, 163.0, 0.433,   0],   # LC-14 ZFW  FL310
+#    [2.5,  43807, 163.0, 0.433,   0],   # LC-15 OEW  FL310
+#
+#    [2.5, 103544, 308.7, 1.225, 100],   # LC-16 MTOW FL0
+#    [2.5,  62767, 308.7, 1.225,   0],   # LC-17 ZFW  FL0
+#    [2.5,  43807, 308.7, 1.225,   0],   # LC-18 OEW  FL0
+#
+#
+#    # --- Positive manoeuvring @ VC ---
+#    [2.5, 103544, 154.0, 0.433, 100],   # LC-19 MTOW FL310
+#    [2.5,  62767, 154.0, 0.433,   0],   # LC-20 ZFW  FL310
+#    [2.5,  43807, 154.0, 0.433,   0],   # LC-21 OEW  FL310
+#
+#    [2.5, 103544, 154.0, 1.225, 100],   # LC-22 MTOW FL0
+#    [2.5,  62767, 154.0, 1.225,   0],   # LC-23 ZFW  FL0
+#    [2.5,  43807, 154.0, 1.225,   0]    # LC-24 OEW  FL0
+#    ]
+#    twist_tip_lst = []
+#    deflection_tip_lst = []
+#
+#    for cond in crit_conds:
+#        print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+#        internal_properties.set_conditions(load_factor=cond[0], weight=cond[1], v_EAS=cond[2], rho=cond[3], fuel_percentage=cond[4])
+#        #internal_properties.get_internal_plot()
+#        #internal_properties.get_internal_torsion_plot()
+#
+#        #twist_plot(internal_properties, CENTROID_X, J_P, b, db)
+#        moment_distribution = internal_properties.internal_bending
+#        torsion_noT_distribution = internal_properties.internal_torsion_noT
+#        torsion_fullT_distribution = internal_properties.internal_torsion_fullT
+#
+#        #PLOT BEAM DEFLECTION
+#        beam = BeamDeflection(b, db, moment_distrib=moment_distribution)
+#        beam.assignI_XX(I_XX)
+#        #beam.plot()
+#
+#        #PLOT BEAM TWIST
+#        beam_twist_noT = TorsionDeflection(b, db, torsion_distrib=torsion_noT_distribution, J_distrib=internal_properties.J)
+#        beam_twist_fullT = TorsionDeflection(b, db, torsion_distrib=torsion_fullT_distribution, J_distrib=internal_properties.J)
+#        #plotTwists(theta_fullT=beam_twist_fullT.theta, theta_noT=beam_twist_noT.theta)
+#        print("At load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3")
+#        print("The Reaction Shear Force is:", internal_properties.internal_shear(0))
+#        print("The Reaction Bending Moment is:", internal_properties.internal_bending(0))
+#        print("The Reaction Torsion Moment at full throttle is:", internal_properties.internal_torsion_fullT(0))
+#        print("The Reaction Torsion Moment at zero throttle is:", internal_properties.internal_torsion_noT(0))
+#        print()
+#        print("The tip deflection is:", beam.v(16.0816)* 1e15, "mm")
+#        deflection_tip_lst.append(beam.v(16.0816)* 1e12)
+#        print("The tip twist (zero T) is:", beam_twist_noT.theta(16.0816)*180/np.pi, "deg")
+#        print("The tip twist (full T) is:", beam_twist_fullT.theta(16.0816)*180/np.pi, "deg")
+#        if beam_twist_fullT.theta(16.0816)>0:
+#            twist_tip_lst.append(max(beam_twist_fullT.theta(16.0816)*180/np.pi, beam_twist_noT.theta(16.0816)*180/np.pi))
+#        else: 
+#            twist_tip_lst.append(min(beam_twist_noT.theta(16.0816)*180/np.pi, beam_twist_fullT.theta(16.0816)*180/np.pi))
+#        print("-----------------------------------------------------")
+#        print()
+#        print()
+#    print("The tip deflections for all loading conditions in m are:", deflection_tip_lst)
+#    print("The tip twists for all loading conditions in deg are:", twist_tip_lst)
+#
