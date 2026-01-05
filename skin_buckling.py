@@ -116,12 +116,12 @@ def Skin_buckling(ribs, normal_stresses, thickness_input):
 
         safety_tab.append(safety_factor)
         ds_tab.append(ds)
-    return ds_tab, sigma_cr_tab, safety_tab
+    return sigma_cr_tab, safety_tab
 
-rib = [0, 0.5, 1, 1.5, 3.5, 4, 5, 6, 7.03893, 8, 9, 12, 16.0816]
-normal_stresses = [257, 248, 239, 230, 193, 184, 166, 149, 132, 111, 90, 33]
+#rib = [0, 0.5, 1, 1.5, 3.5, 4, 5, 6, 7.03893, 8, 9, 12, 16.0816]
+#normal_stresses = [257, 248, 239, 230, 193, 184, 166, 149, 132, 111, 90, 33]
 
-ds_tab, sigma_cr_tab, safety_tab = Skin_buckling(rib, normal_stresses, 22e-3)
-plt.scatter(ds_tab, sigma_cr_tab)
-plt.show()
-print(safety_tab)
+#ds_tab, sigma_cr_tab, safety_tab = Skin_buckling(rib, normal_stresses, 22e-3)
+#plt.scatter(ds_tab, sigma_cr_tab)
+#plt.show()
+#print(safety_tab)
