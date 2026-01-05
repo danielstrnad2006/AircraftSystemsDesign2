@@ -70,22 +70,27 @@ def Shear_buckling(ribs_input_lst, shear_stresses_input_lst, thicknesses_input):
         graph = sp.interpolate.interp1d(x_data,output,kind="previous",bounds_error=False,fill_value=(output[0], output[-1]))
         return output, graph
 
+
+
     ##input all of this to find the graphs for safety buckling 
 
 
-    #safety_Factor=1.2
-    #count=50
-    #tolerance=0.05
-    #for _ in range(count):
-    #    values, useless = shear_buckling_along(ribs, shear_stresses, thicknesses)
-#
-    #    for k, MS in enumerate(values):
-#
-    #        if MS > safety_Factor + tolerance:
-    #            thicknesses[k] -= 0.001
-    #        elif MS < safety_Factor:
-    #            thicknesses[k] += 0.001
+    safety_Factor=1.2
+    count=50
+    tolerance=0.05
+    for _ in range(count):
+        values, useless = shear_buckling_along(ribs, shear_stresses, thicknesses)
+
+        for k, MS in enumerate(values):
+
+            if MS > safety_Factor + tolerance:
+                thicknesses[k] -= 0.001
+            elif MS < safety_Factor:
+                thicknesses[k] += 0.001
+
+    values,graph= shear_buckling_along(ribs, shear_stresses, thicknesses)
+    
 
     
-    return shear_buckling_along(ribs, shear_stresses, thicknesses)[0]
+    return graph
 
