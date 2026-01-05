@@ -22,9 +22,13 @@ def Skin_buckling(ribs, normal_stresses, thickness_input):
 
 
     def skin_buckling(b, kc):
-        sigma_cr = ((((math.pi**2)*kc*E)/(12*(1-(poisson**2))))*((t/b)**2))/10**6
+        sigma_cr = ((((math.pi**2)*kc*E)/(12*(1-(poisson**2))))*((t/b)**2))/(10**6)
         return sigma_cr
-
+    
+    def skin_buckling_wide(a, kc):
+        sigma_cr = ((((math.pi**2)*E)/(12*(1-(poisson**2))))*((t/a)**2))/(10**6)
+        return sigma_cr
+    
     def bending_stress(M, y, I_xx):
         sigma_ben = M * y / I_xx
         return sigma_ben
@@ -54,6 +58,13 @@ def Skin_buckling(ribs, normal_stresses, thickness_input):
         kc_ratio = a/b
 
         kc_values = [
+            (0.0, 0.1, 26.3),
+            (0.1, 0.2, 24.7),
+            (0.2, 0.3, 23.1),
+            (0.3, 0.4, 21.5),
+            (0.4, 0.5, 19.9),
+            (0.5, 0.6, 18.3),          
+            (0.6, 0.7, 16.7),
             (0.7, 0.8, 15.1),
             (0.8, 0.9, 13.5),
             (0.9, 1.0, 11.9),
@@ -78,20 +89,25 @@ def Skin_buckling(ribs, normal_stresses, thickness_input):
                 if low <= kc_ratio < high:
                     return val
                 
-            if kc_ratio >= 1.7:
+            if kc_ratio >= 2.7:
                 return 7.5
             else:
                 return 20
                         
         kc = float(get_value(kc_ratio))
-
+        
+ 
         print(f"From {ribs[i]} to {ribs[i+1]}")
         print(f"delta_a: {a}")
         print(f"chord/b: {b}")
         print(f"kc_ratio: {kc_ratio}")
-        print(f"kc: {kc}")    
+        print(f"kc: {kc}")  
 
-        sigma_cr = skin_buckling(b, kc)
+        if kc_ratio < 0.5: 
+            sigma_cr = skin_buckling_wide(a, kc)
+        else:
+            sigma_cr = skin_buckling(b, kc) 
+            
         safety_factor = safety_margin(normal_stresses[i], sigma_cr)
 
         ds = float(ribs[i])
@@ -105,5 +121,7 @@ def Skin_buckling(ribs, normal_stresses, thickness_input):
 #rib = [0, 0.5, 1, 1.5, 3.5, 4, 5, 6, 7.03893, 8, 9, 12, 16.0816]
 #normal_stresses = [257, 248, 239, 230, 193, 184, 166, 149, 132, 111, 90, 33]
 
-#sigma_cr_tab, safety_tab = Skin_buckling(rib, normal_stresses)
+#ds_tab, sigma_cr_tab, safety_tab = Skin_buckling(rib, normal_stresses, 22e-3)
+#plt.scatter(ds_tab, sigma_cr_tab)
+#plt.show()
 #print(safety_tab)
