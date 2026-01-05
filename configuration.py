@@ -122,7 +122,7 @@ with open("Q.txt", "w") as f:
     json.dump(Q, f)
 
 with open("spar_thickness.txt", "w") as f:
-    spar_thickness = [t_spar1, t_spar2]
+    spar_thickness = [t_spar1, t_spar2, t_skin_up]
     json.dump(spar_thickness, f)
 
 with open("stiffeners_areas.txt", "w") as f:

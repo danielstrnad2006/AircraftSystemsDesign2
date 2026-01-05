@@ -47,7 +47,7 @@ with open("stiffeners_areas.txt") as f:
     stiffeners_areas = json.load(f)
 
 internal_properties.set_torsion_params(db, CENTROID_X, J_P)
-internal_properties.set_buckling_params(db, Q, I_XX, spar_thickness=spar_thickness, ribs_locations = ribs_locations)
+internal_properties.set_buckling_params(db, Q, I_XX, spar_thickness=spar_thickness[:-1], ribs_locations = ribs_locations)
 compressive_yield_strength = 4e8 #Pa
 
 if input("Start with detailed analysis of critical conditions? (y)")=="y":
@@ -94,7 +94,7 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
 
         ### Buckling Analysis ###
         shear_buckling_safety = Shear_buckling(ribs_locations, [tau/1e6 for tau in tau_lst], spar_thickness[0])
-        skin_buckling_safety = Skin_buckling(ribs_locations, [sigma/1e6 for sigma in sigma_lst])[1]
+        skin_buckling_safety = Skin_buckling(ribs_locations, [sigma/1e6 for sigma in sigma_lst], thickness_input=spar_thickness[2])[1]
 
         shear_buckling_safety_interp1d = shear_buckling_safety 
         skin_buckling_safety_interp1d = sp.interpolate.interp1d(ribs_locations[:-1], skin_buckling_safety, kind='previous', bounds_error=False, fill_value=(skin_buckling_safety[0], skin_buckling_safety[-1]))
