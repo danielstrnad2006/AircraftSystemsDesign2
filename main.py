@@ -48,7 +48,7 @@ with open("stiffeners_areas.txt") as f:
 
 internal_properties.set_torsion_params(db, CENTROID_X, J_P)
 internal_properties.set_buckling_params(db, Q, I_XX, spar_thickness=spar_thickness[:-1], ribs_locations = ribs_locations)
-compressive_yield_strength = 4e8 #Pa
+compressive_yield_strength = 450e6 #Pa
 
 if input("Start with detailed analysis of critical conditions? (y)")=="y":
     for cond in crit_conds:
