@@ -61,19 +61,16 @@ def Skin_buckling(ribs, normal_stresses):
             (1.1, 1.15, 10.4),
             (1.15, 1.2, 10.5),
             (1.2, 1.3, 9.85),
-            (1.3, 1.4, ),
-            (1.4, 1.5, ),
-            (1.5, 1.6, ),
-            (1.6, 1.7, ),
-            (1.7, 1.8, ),
-            (1.8, 1.9, ),
-            (1.9, 2, ),
-            (2, 2.1, ),       
-            (2.1, 2.2, ),
-            (2.2, 2.3, ),
-            (2.3, 2.4, ),
-            (2.4, 2.5, ),  
-            (2.5, 2.6, ),                                
+            (1.3, 1.4, 9.66),
+            (1.4, 1.5, 9.46),
+            (1.5, 1.6, 9.31),
+            (1.6, 1.7, 9.15),
+            (1.7, 1.8, 8.58),
+            (1.8, 1.9, 8),
+            (1.9, 2, 7.96),
+            (2, 2.1, 7.92),       
+            (2.1, 2.6, 7.90),
+            (2.6, 2.7, 7.77),                           
         ]
 
         def get_value(kc_ratio):
@@ -95,7 +92,7 @@ def Skin_buckling(ribs, normal_stresses):
         print(f"kc: {kc}")    
 
         sigma_cr = skin_buckling(b, kc)
-        safety_factor = safety_margin(normal_stresses, sigma_cr)
+        safety_factor = safety_margin(normal_stresses[i], sigma_cr)
 
         ds = float(ribs[i])
 
@@ -104,3 +101,9 @@ def Skin_buckling(ribs, normal_stresses):
         safety_tab.append(safety_factor)
         ds_tab.append(ds)
     return sigma_cr_tab, safety_tab
+
+#rib = [0, 0.5, 1, 1.5, 3.5, 4, 5, 6, 7.03893, 8, 9, 12, 16.0816]
+#normal_stresses = [257, 248, 239, 230, 193, 184, 166, 149, 132, 111, 90, 33]
+
+#sigma_cr_tab, safety_tab = Skin_buckling(rib, normal_stresses)
+#print(safety_tab)
