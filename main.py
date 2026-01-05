@@ -94,7 +94,7 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
 
         ### Buckling Analysis ###
         shear_buckling_safety = Shear_buckling(ribs_locations, [tau/1e6 for tau in tau_lst], spar_thickness[0])
-        skin_buckling_safety = Skin_buckling(ribs_locations, [sigma/1e6 for sigma in sigma_lst], thickness_input=spar_thickness[2])[1]
+        skin_buckling_safety = Skin_buckling(ribs_locations, [sigma/1e6 for sigma in sigma_lst], thickness_input=spar_thickness[2]*1e-3)[1]
 
         shear_buckling_safety_interp1d = shear_buckling_safety 
         skin_buckling_safety_interp1d = sp.interpolate.interp1d(ribs_locations[:-1], skin_buckling_safety, kind='previous', bounds_error=False, fill_value=(skin_buckling_safety[0], skin_buckling_safety[-1]))
