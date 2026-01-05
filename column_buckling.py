@@ -3,6 +3,10 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 def Column_buckling(ribs_input_lst, shear_stresses_input_lst, stringer_areas_input):
+    # change this when needed
+    stringer_thickness = 0.003  #m
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     
     #input section
     ribs=  ribs_input_lst[:-1] #rib locations along span of beam [m] # assuming the end of the wing has a rib
 
@@ -11,7 +15,9 @@ def Column_buckling(ribs_input_lst, shear_stresses_input_lst, stringer_areas_inp
     #this is for each stringer, so if you want to change the stringer from 0 to 1st rib, change the first value 
     stringer_area=stringer_areas_input #area of each stringer in m^2
     stringer_ratios=[1] * len(stringer_areas_input) #ratio is L/B where L is the stringer part that is parallel to the x-axis and B is the stringer length 
-    stringer_thicknesses=[0.003] * len(stringer_areas_input) #m 
+
+
+    stringer_thicknesses=[stringer_thickness] * len(stringer_areas_input) #m 
 
     #if there is no stringer from a certain point, watch out, don't input zeros, just remove the last value from x_data and output
 

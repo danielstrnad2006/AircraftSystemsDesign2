@@ -39,10 +39,11 @@ def Shear_buckling(ribs_input_lst, shear_stresses_input_lst, thicknesses_input):
         for i in k_s_values:
             if i[0] <= aspect_ratio < i[1]:
                 return i[2]
-            elif aspect_ratio>=k_s_values[-1][1]:
-                return 9.4
-            elif aspect_ratio<k_s_values[0][0]:
-                return 15
+      
+        if aspect_ratio>=k_s_values[-1][1]:
+            return 9.4
+        elif aspect_ratio<k_s_values[0][0]:
+            return 8.98 * (aspect_ratio)**(-2) + 5.6
             
 
     def shear_buckling_along(ribs, shear_stresses, thicknesses):
@@ -60,37 +61,39 @@ def Shear_buckling(ribs_input_lst, shear_stresses_input_lst, thicknesses_input):
                 b_spar =  0.14 * wing.chord(ribs[i-1])  #conservative assumption, takes the chord length at that location
             else: b_spar =0.14*wing.chord(0)
             aspect_ratio = (length/b_spar)
+            
             K_value=aspect_to_K(aspect_ratio)
             tau_crit = (math.pi**2*K_value*E_mod/(12*(1-poisson**2))*(thicknesses[i]/b_spar)**2)*10**(-6)
             safety=tau_crit/shear_stresses[i]
             if safety>20:safety=20
             output.append(safety)
+            print("aspect ratio:", aspect_ratio, "K_s", K_value)
         x_data.pop(-1)
         
         graph = sp.interpolate.interp1d(x_data,output,kind="previous",bounds_error=False,fill_value=(output[0], output[-1]))
         return output, graph
-
+    return shear_buckling_along(ribs, shear_stresses, thicknesses)[1]
 
 
     ##input all of this to find the graphs for safety buckling 
 
 
-    safety_Factor=1.2
-    count=50
-    tolerance=0.05
-    for _ in range(count):
-        values, useless = shear_buckling_along(ribs, shear_stresses, thicknesses)
-
-        for k, MS in enumerate(values):
-
-            if MS > safety_Factor + tolerance:
-                thicknesses[k] -= 0.001
-            elif MS < safety_Factor:
-                thicknesses[k] += 0.001
-
-    values,graph= shear_buckling_along(ribs, shear_stresses, thicknesses)
+    #safety_Factor=1
+    #count=50
+    #tolerance=0.05
+    #for _ in range(count):
+    #    values, useless = shear_buckling_along(ribs, shear_stresses, thicknesses)
+#
+    #    for k, MS in enumerate(values):
+#
+    #        if MS > safety_Factor + tolerance:
+    #            thicknesses[k] -= 0.001
+    #        elif MS < safety_Factor:
+    #            thicknesses[k] += 0.001
+#
+    #values,graph= shear_buckling_along(ribs, shear_stresses, thicknesses)
     
 
     
-    return graph
+    
 
