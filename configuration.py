@@ -55,8 +55,8 @@ while b_cur < wing.b/2:
     if PLOT:
         wing.plot(chord_position=b_cur)
 
-    t_spar1 = 8
-    t_spar2 = 8
+    t_spar1 = 14
+    t_spar2 = 14
     t_skin_up = 24
 
     t_skin_down =  t_skin_up

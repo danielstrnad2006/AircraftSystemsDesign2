@@ -22,7 +22,7 @@ from column_buckling import Column_buckling
 from skin_buckling import Skin_buckling
 
 # change this when needed, keep 0, 7.03893, 16.0816 at the end
-ribs_locations = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7.03893, 8, 9, 12, 16.0816]
+ribs_locations = [0, 0.33, 0.66 , 1, 1.33, 1.66, 2, 2.33, 2.66, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7.03893, 8, 9, 12, 16.0816]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
