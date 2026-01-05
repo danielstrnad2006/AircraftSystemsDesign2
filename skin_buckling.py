@@ -6,7 +6,7 @@ from planform import *
 
 
 
-def Skin_buckling(ribs, normal_stresses):
+def Skin_buckling(ribs, normal_stresses, thickness_input):
     span = 32.1632
     poisson = 0.33
     E = 72.4e9
@@ -15,7 +15,7 @@ def Skin_buckling(ribs, normal_stresses):
     sigma_cr_tab = []
     safety_tab = []
     ds_tab = []
-    t = 2.5e-3 #[m]
+    t = thickness_input
 
     wing = WingSizing(S_w=149.9, b=span, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
                     leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
