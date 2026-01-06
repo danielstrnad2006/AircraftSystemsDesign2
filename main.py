@@ -30,7 +30,7 @@ db = 0.5
 b = 32.1632
 
 internal_properties=internal_loads.halfWing
-crit_conds = [[2.5, 103544, 308.7, 1.225, 100],[-1, 103544,  87.3, 0.433, 100], [2.5,  43807, 308.7, 1.225,   0], [2.5, 103544, 138.0, 1.225, 100]]
+crit_conds = [[2.5, 103544, 308.7, 1.225, 100, "LC-16"],[-1, 103544,  87.3, 0.433, 100, "LC-7"], [2.5,  43807, 308.7, 1.225,   0, "LC-18"], [2.5, 103544, 138.0, 1.225, 100, "LC-4"]]
 
 
 
@@ -55,7 +55,7 @@ internal_properties.set_torsion_params(db, CENTROID_X, J_P)
 internal_properties.set_buckling_params(db, Q, I_XX, spar_thickness=spar_thickness[:-1], ribs_locations = ribs_locations)
 compressive_yield_strength = 450e6 #Pa
 
-if input("Start with detailed analysis of critical conditions? (y)")=="y":
+if True: #input("Start with detailed analysis of critical conditions? (y)")=="y":
     for cond in crit_conds:
         print(cond) 
         print("going through load case with load factor: ", cond[0], ", mass", cond [1], "kg, Equivalent Air Speed: ", cond[2], "m/s, and density", cond[3], "kg/m^3, fuel percentage of:", cond[4], "%")
@@ -111,21 +111,37 @@ if input("Start with detailed analysis of critical conditions? (y)")=="y":
         shear_buckling_safety_func = shear_buckling_safety_interp1d(x_plot)
         compressive_stress_safety_func = compressive_yield_strength/sigma_interp1d(x_plot)
         
-        plt.plot(x_plot, shear_buckling_safety_func, label="Shear Buckling Margin Of Safety")
-        plt.plot(x_plot, column_buckling_safety_interp1d(x_plot), label="Column Buckling Margin Of Safety")
-        plt.plot(x_plot, compressive_stress_safety_func, label="Compressive Yielding Margin Of Safety")
-        plt.plot(x_plot, skin_buckling_safety_interp1d(x_plot), label="Skin Buckling Margin Of Safety")
+        tip_deflection = beam.v(16.0816)* 1e12
+        if beam_twist_fullT.theta(16.0816)>0:
+            tip_twist = (max(beam_twist_fullT.theta(16.0816)*180/np.pi, beam_twist_noT.theta(16.0816)*180/np.pi))
+        else: 
+            tip_twist =(min(beam_twist_noT.theta(16.0816)*180/np.pi, beam_twist_fullT.theta(16.0816)*180/np.pi))
+
+        # Set up the figure with better styling
+        plt.figure(figsize=(12, 7))
+        plt.style.use('seaborn-v0_8-darkgrid')
+        
+        # Plot safety margins with improved line styles and colors
+        plt.plot(x_plot, shear_buckling_safety_func, linewidth=2.5, label="Shear Buckling", color='#1f77b4')
+        plt.plot(x_plot, column_buckling_safety_interp1d(x_plot), linewidth=2.5, label="Column Buckling", color='#ff7f0e')
+        plt.plot(x_plot, compressive_stress_safety_func, linewidth=2.5, label="Compressive Yielding", color='#2ca02c')
+        plt.plot(x_plot, skin_buckling_safety_interp1d(x_plot), linewidth=2.5, label="Skin Buckling", color='#d62728')
+        
+        # Add critical threshold line
+        plt.axhline(y=1.5, color='red', linestyle='--', linewidth=2, label="Critical Threshold (FoS=1.5)", alpha=0.8)
+        plt.axhline(y=1.0, color='darkred', linestyle=':', linewidth=1.5, alpha=0.6)
+        
+        # Formatting
         plt.ylim(0, 8)
         plt.xlim(0, b/2)
-        plt.xlabel("Spanwise location y [m]")
-        plt.ylabel("Margin Of Safety[-]")
-        plt.grid(True)
-        plt.hlines(y=1.5, color='r', linestyle='--', label="Failure Threshold incl. Safety Factor", xmin=0, xmax=b/2)
-        plt.title("Margin Of Safety Along Span for different Failure Modes")
-        plt.legend()
+        plt.xlabel("Spanwise Location [m]", fontsize=12, fontweight='bold')
+        plt.ylabel("Margin of Safety [-]", fontsize=12, fontweight='bold')
+        plt.title(f"Margin of Safety Analysis - Load Case {cond[5]}\nTip Deflection: {tip_deflection:.3f} m | Maximum Tip Twist: {tip_twist:.3f}°", fontsize=14, fontweight='bold', pad=20)
+        plt.grid(True, alpha=0.4, linestyle='-', linewidth=0.5, color='gray')
+        plt.legend(loc='best', fontsize=11, framealpha=0.95)
+        plt.gca().set_facecolor('white')
+        plt.tight_layout()
         plt.show()
-
-
 
 
 
