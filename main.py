@@ -22,7 +22,10 @@ from column_buckling import Column_buckling
 from skin_buckling import Skin_buckling
 
 # change this when needed, keep 0, 7.03893, 16.0816 at the end
-ribs_locations = [0, 0.33, 0.66 , 1, 1.33, 1.66, 2, 2.33, 2.66, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7.03893, 8, 9, 12, 16.0816]
+#flaps at 2.067 9.96
+#slats at 2.067 14.93
+#landing gear at 2.34
+ribs_locations = [0, 0.33, 0.66, 1, 1.33, 1.66, 2.067, 2.34,2.6, 3, 3.3,3.6 , 4, 4.3,4.6, 5,5.5, 6,6.5, 7.03893,7.5, 8, 9,10, 11, 12.2, 14,15, 16.0816]
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 

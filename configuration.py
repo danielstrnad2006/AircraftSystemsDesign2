@@ -34,20 +34,36 @@ def interp(object, location):
 
 while b_cur < wing.b/2:
     stiffeners = [
+        (0.2, 'up', 90, b/2),
+       (0.2, 'down', 90, b/2),
        (0.25, 'up', 90, b/2),
        (0.25, 'down', 90, b/2),
+       (0.275, 'up', 90, b/2),
+       (0.275, 'down', 90, b/2),
        (0.30, 'up', 90, b/2),
        (0.30, 'down', 90, b/2),
+       (0.325, 'up', 90, b/2),
+       (0.325, 'down', 90, b/2),
        (0.35, 'up', 90, b/2),
        (0.35, 'down', 90, b/2),
+       (0.375, 'up', 90, b/2),
+       (0.375, 'down', 90, b/2),
        (0.40, 'up', 90, b/2),
        (0.40, 'down', 90, b/2),
+        (0.425, 'up', 90, b/2),
+       (0.425, 'down', 90, b/2),
        (0.45, 'up', 90, b/2),
        (0.45, 'down', 90, b/2),
-       (0.50, 'up', 90, b/2),
-       (0.50, 'down', 90, b/2),
+       (0.475, 'up', 90, b/2),
+       (0.475, 'down', 90, b/2),
+       (0.5, 'up', 90, b/2),
+       (0.5, 'down', 90, b/2),
+       (0.525, 'up', 90, b/2),
+       (0.525, 'down', 90, b/2),
        (0.55, 'up', 90, b/2),
        (0.55, 'down', 90, b/2),
+       (0.575, 'up', 90, b/2),
+       (0.575, 'down', 90, b/2),
        (0.60, 'up', 90, b/2),
        (0.60, 'down', 90, b/2),
     ]
@@ -55,9 +71,9 @@ while b_cur < wing.b/2:
     if PLOT:
         wing.plot(chord_position=b_cur)
 
-    t_spar1 = 14
-    t_spar2 = 14
-    t_skin_up = 8
+    t_spar1 = 15
+    t_spar2 = 15
+    t_skin_up = 5
 
     t_skin_down =  t_skin_up
     cs = CrossSection(xc_spar1=0.2, xc_spar2=0.65, chord=wing.chord(b_cur)*1000, b_cur=b_cur,
