@@ -66,6 +66,61 @@ class WingSizing:
             os.mkdir('temp')
         plt.savefig('temp/planform.png', bbox_inches='tight')
 
+    # ---------------------------
+    # Plotting method
+    # ---------------------------
+    def plotribs(self, ribs_locations):
+        y = np.linspace(0, self.b/2, 200)
+        LE = np.array([self.leading_edge(yi) for yi in y])
+        TE = np.array([self.trailing_edge(yi) for yi in y])
+
+        # Plot lines on top
+        plt.plot(y, -LE, label='Leading Edge', color='0.2', linewidth=2)
+        plt.plot(y, -TE, label='Trailing Edge', color='0.8', linewidth=2)
+
+        # Fill area first
+        plt.fill_between(y, -LE, -TE, color='0.8', alpha=0.3)
+        
+        SPAR1 = LE.copy()
+        for i, LE_unit in enumerate(SPAR1):
+            SPAR1[i] = LE_unit + abs((LE_unit - TE[i]))*0.2
+
+        SPAR2 = LE.copy()
+        for i, LE_unit in enumerate(SPAR2):
+            SPAR2[i] = LE_unit + abs((LE_unit - TE[i]))*0.65
+
+        # Plot wing box
+        plt.plot(y, -SPAR1, label='Front Spar', color='0.4', linewidth=2, linestyle='--')
+        plt.plot(y, -SPAR2, label='Front Spar', color='0.6', linewidth=2, linestyle='--')
+
+        # Fixed axes
+        plt.xlim(0, max(y)*1.1)
+        plt.ylim(-max(TE)*1.1,0)
+
+        for i, rib in enumerate(ribs_locations):
+            if rib == 2.067:
+                plt.vlines(x=rib, ymin=-self.trailing_edge(rib), ymax=-self.leading_edge(rib), color='#FCDC4D', linewidth=3, label=f"Rib {i+1} at {rib:0.2f} m (Flaps and Slats Start)")    
+            elif rib == 2.34:
+                plt.vlines(x=rib, ymin=-self.trailing_edge(rib), ymax=-self.leading_edge(rib), color='#E67F0D', linewidth=3, label=f"Rib {i+1} at {rib:0.2f} m (Landing Gear)")    
+            elif rib == 7.03893:
+                plt.vlines(x=rib, ymin=-self.trailing_edge(rib), ymax=-self.leading_edge(rib), color="#E9190F", linewidth=3, label=f"Rib {i+1} at {rib:0.2f} m (Engine)")      
+            elif rib == 10:
+                plt.vlines(x=rib, ymin=-self.trailing_edge(rib), ymax=-self.leading_edge(rib), color="#FF009D", linewidth=3, label=f"Rib {i+1} at {rib:0.2f} m (Flaps End)")    
+            elif rib == 15:
+                plt.vlines(x=rib, ymin=-self.trailing_edge(rib), ymax=-self.leading_edge(rib), color="#B700FF", linewidth=3, label=f"Rib {i+1} at {rib:0.2f} m (Slats End)")
+            else:
+                plt.vlines(x=rib, ymin=-self.trailing_edge(rib), ymax=-self.leading_edge(rib), color='0.3', linewidth=2, label=f"Rib {i+1} at {rib:0.2f} m")
+        
+        plt.title("Rib Locations Along Span")
+        plt.ylabel("y [m]")
+        plt.xlabel("x [m]")
+        plt.legend(ncol=2)
+        color='0.2'
+
+        if not os.path.exists('rib spacing'):
+            os.mkdir('rib spacing')
+        plt.savefig('rib spacing/rib spacing.png', bbox_inches='tight')
+
 
 # wing = WingSizing(S_w=149.9, b=32.1632, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
 #                  leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)

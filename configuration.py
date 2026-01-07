@@ -16,7 +16,8 @@ b_pos = []
 cross_sections = []
 
 PLOT = False
-
+ribs_locations_D1 = [0, 0.33, 0.63 , 1, 1.33, 1.66, 2.067, 2.34,2.6, 3, 3.3,3.6 , 4, 4.3,4.6, 5,5.5, 6,6.5, 7.03893,7.6, 8,8.5, 9,10, 11, 12.2,14, 15,16.0816]
+ribs_locations_D2 = [0, 0.33, 0.66, 1, 1.33, 1.66, 2.067, 2.34,2.6, 3, 3.3,3.6 , 4, 4.3,4.6, 5,5.5, 6,6.5, 7.03893,7.5, 8, 9,10, 11,12.2, 14,15, 16.0816]
 
 wing = WingSizing(S_w=149.9, b=b, c_root=7.2855, c_tip=2.0372, taper_ratio=0.2796,
                  leading_sweep=37.537, quart_sweep=34.4871, dihedral=5)
@@ -94,6 +95,7 @@ while b_cur < wing.b/2:
 
     b_cur = b_cur + db
 
+wing.plotribs(ribs_locations_D2)
 
 plt.figure()
 
