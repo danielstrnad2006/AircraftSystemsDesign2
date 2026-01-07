@@ -120,30 +120,43 @@ if True: #input("Start with detailed analysis of critical conditions? (y)")=="y"
         else: 
             tip_twist =(min(beam_twist_noT.theta(16.0816)*180/np.pi, beam_twist_fullT.theta(16.0816)*180/np.pi))
 
-        # Set up the figure with better styling
-        plt.figure(figsize=(12, 7))
+        # Set up the figure with better styling (A4 size for 3 graphs per page)
+        plt.figure(figsize=(8.27, 3.9))  # A4 width minus borders, height for 3 per page
         plt.style.use('seaborn-v0_8-darkgrid')
         
         # Plot safety margins with improved line styles and colors
         plt.plot(x_plot, shear_buckling_safety_func, linewidth=2.5, label="Shear Buckling", color='#1f77b4')
         plt.plot(x_plot, column_buckling_safety_interp1d(x_plot), linewidth=2.5, label="Column Buckling", color='#ff7f0e')
-        plt.plot(x_plot, compressive_stress_safety_func, linewidth=2.5, label="Compressive Yielding", color='#2ca02c')
+        plt.plot(x_plot, compressive_stress_safety_func, linewidth=2.5, label="Tensile/Compressive Yielding", color='#2ca02c')
         plt.plot(x_plot, skin_buckling_safety_interp1d(x_plot), linewidth=2.5, label="Skin Buckling", color='#d62728')
         
         # Add critical threshold line
         plt.axhline(y=1.5, color='red', linestyle='--', linewidth=2, label="Critical Threshold (FoS=1.5)", alpha=0.8)
         plt.axhline(y=1.0, color='darkred', linestyle=':', linewidth=1.5, alpha=0.6)
         
-        # Formatting
-        plt.ylim(0, 8)
+        # Formatting with larger text
+        plt.ylim(0, 8)  # Set limits for logarithmic scale
         plt.xlim(0, b/2)
-        plt.xlabel("Spanwise Location [m]", fontsize=12, fontweight='bold')
-        plt.ylabel("Margin of Safety [-]", fontsize=12, fontweight='bold')
-        plt.title(f"Margin of Safety Analysis - Load Case {cond[5]}\nTip Deflection: {tip_deflection:.3f} m | Maximum Tip Twist: {tip_twist:.3f}°", fontsize=14, fontweight='bold', pad=20)
+        plt.xlabel("Spanwise Location [m]", fontsize=14, fontweight='bold')
+        plt.ylabel("Margin of Safety [-]", fontsize=14, fontweight='bold')
+        plt.title(f"Margin of Safety Analysis - Load Case {cond[5]}\nTip Deflection: {tip_deflection:.3f} m | Maximum Tip Twist: {tip_twist:.3f}°", fontsize=16, fontweight='bold', pad=20)
         plt.grid(True, alpha=0.4, linestyle='-', linewidth=0.5, color='gray')
-        plt.legend(loc='best', fontsize=11, framealpha=0.95)
+        
         plt.gca().set_facecolor('white')
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.legend(
+    loc='best', 
+    fontsize=13, 
+    frameon=True,           # <--- Forces the frame to appear
+    facecolor='white',      # <--- Ensures the background is not transparent/None
+    framealpha=0.95, 
+    fancybox=True, 
+    shadow=True, 
+    edgecolor='black'
+)
         plt.tight_layout()
+
         plt.show()
 
 
